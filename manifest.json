@@ -16,8 +16,8 @@
   "commands": {
     "_execute_action": {
       "suggested_key": {
-        "default": "Ctrl+Period",
-        "mac": "MacCtrl+Period"
+        "default": "Ctrl+B",
+        "mac": "MacCtrl+B"
       },
       "description": "Open the launcher"
     }
