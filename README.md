@@ -14,7 +14,7 @@ Keyboard launcher extension for Chrome and Firefox (working title).
 ### Hot reload
 
 ```sh
-node scripts/dev-server.mjs
+just dev   # = node scripts/dev-server.mjs
 ```
 
 While this runs, saving any file reloads the unpacked extension in the
