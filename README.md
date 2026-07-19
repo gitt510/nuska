@@ -21,6 +21,22 @@ or Firefox's Manage Extension Shortcuts.
 2. "Load unpacked" → select this directory
 3. After editing files, press the reload (⟳) button on the extension card
 
+### Hot reload (daily-driver browser)
+
+```sh
+node scripts/dev-server.mjs
+```
+
+While this runs, the unpacked extension reloads itself about 1s after any file
+is saved — no ⟳ needed. The extension polls `http://127.0.0.1:17345` for a
+change stamp and calls `runtime.reload()` when it changes. With the watcher
+stopped, it probes at most once every 30s and behaves normally; starting the
+watcher takes up to 30s to be picked up.
+
+Firefox MV3 treats host permissions as opt-in: enable the `127.0.0.1`
+permission in about:addons → this extension → Permissions, or hot reload
+stays silently inactive there.
+
 Chrome may warn about the `background.scripts` manifest key — it is for Firefox
 and safely ignored (Chrome 121+).
 
