@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "wip-extension-cf",
+  "version": "0.1.0",
+  "description": "Keyboard launcher: one prefix shortcut, then single keys for bookmark fuzzy search, window split, and window merge.",
+  "permissions": ["bookmarks", "tabs", "system.display"],
+  "background": {
+    "service_worker": "bg.js",
+    "scripts": ["bg.js"]
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Launcher"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Period",
+        "mac": "MacCtrl+Period"
+      },
+      "description": "Open the launcher"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "wip-extension-cf@gitt510",
+      "strict_min_version": "121.0"
+    }
+  }
+}

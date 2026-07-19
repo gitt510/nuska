@@ -1,0 +1,80 @@
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#fafafa, #1e1e24);
+  --fg: light-dark(#1a1a1a, #e8e8ea);
+  --muted: light-dark(#6b6b70, #9a9aa2);
+  --accent: light-dark(#2563eb, #7aa2f7);
+  --selected-bg: light-dark(#e8eefc, #2b3045);
+  --border: light-dark(#e2e2e6, #33333c);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 360px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+}
+
+ul {
+  list-style: none;
+}
+
+#command-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  text-align: center;
+  color: var(--accent);
+}
+
+#search-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+}
+
+#result-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+#result-list li {
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#result-list li.selected {
+  background: var(--selected-bg);
+}
+
+#result-list .path {
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: 6px;
+}
