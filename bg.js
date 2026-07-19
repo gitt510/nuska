@@ -1,6 +1,6 @@
 // Background (Chrome: MV3 service worker / Firefox: event page).
-// The popup only *selects* a command; all window manipulation happens here,
-// because the popup dies the moment focus moves away from it.
+// The popup only selects; actions run here, because the popup dies the
+// moment focus moves away from it.
 
 const api = globalThis.browser ?? globalThis.chrome;
 
@@ -8,9 +8,6 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     try {
       switch (msg.type) {
-        case "merge":
-          await mergeWindows();
-          break;
         case "open-url":
           await api.tabs.create({ url: msg.url });
           break;
@@ -70,22 +67,3 @@ async function devFetch() {
   }
 }
 
-// Move every tab from every other normal window into the current one.
-// Moving a pinned tab drops its pinned state, so re-pin afterwards.
-async function mergeWindows() {
-  const current = await api.windows.getLastFocused({ windowTypes: ["normal"] });
-  const others = (await api.windows.getAll({ populate: true })).filter(
-    (w) => w.type === "normal" && w.id !== current.id,
-  );
-
-  for (const w of others) {
-    const pinnedIds = w.tabs.filter((t) => t.pinned).map((t) => t.id);
-    await api.tabs.move(
-      w.tabs.map((t) => t.id),
-      { windowId: current.id, index: -1 },
-    );
-    for (const id of pinnedIds) {
-      await api.tabs.update(id, { pinned: true });
-    }
-  }
-}

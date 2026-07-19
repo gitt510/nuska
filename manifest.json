@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "wip-extension-cf",
   "version": "0.1.0",
-  "description": "Keyboard launcher: one prefix shortcut, then single keys for bookmark fuzzy search, window split, and window merge.",
-  "permissions": ["bookmarks", "tabs", "alarms"],
+  "description": "One shortcut opens your bookmarks bar as a tree with fuzzy search.",
+  "permissions": ["bookmarks", "alarms"],
   "host_permissions": ["http://127.0.0.1/*"],
   "background": {
     "service_worker": "bg.js",

@@ -1,64 +1,77 @@
 const api = globalThis.browser ?? globalThis.chrome;
 
-// prefix + key bindings. Edit here for now; an options page comes later.
-const COMMANDS = [
-  { key: "b", label: "search bookmarks", run: enterSearchMode },
-  { key: "m", label: "merge all windows", run: () => dispatch({ type: "merge" }) },
-];
-
-const rootView = document.getElementById("root-view");
-const searchView = document.getElementById("search-view");
 const searchInput = document.getElementById("search-input");
 const resultList = document.getElementById("result-list");
 
-let bookmarks = [];
-let results = [];
+let allBookmarks = []; // every bookmark, flattened — the fuzzy search corpus
+let treeEntries = []; // bookmarks-bar tree — shown while the query is empty
+let entries = []; // whatever is currently rendered
 let selected = 0;
 
-// Start fetching immediately so search mode is ready by the time `b` is hit.
-const bookmarksPromise = api.bookmarks.getTree().then(flatten);
+init();
 
-renderCommandList();
+async function init() {
+  const roots = await api.bookmarks.getTree();
+  allBookmarks = flatten(roots);
+  treeEntries = buildTree(barNode(roots));
+  searchInput.focus();
+  show(treeEntries);
+}
+
 searchInput.addEventListener("input", () => search(searchInput.value));
 
 document.addEventListener("keydown", (e) => {
-  if (!searchView.hidden) {
-    onSearchKeydown(e);
+  if (e.ctrlKey && (e.key === "n" || e.key === "p")) {
+    e.preventDefault();
+    move(e.key === "n" ? 1 : -1);
     return;
   }
-  const cmd = COMMANDS.find((c) => c.key === e.key);
-  if (cmd) {
-    e.preventDefault();
-    cmd.run();
+  switch (e.key) {
+    case "ArrowDown":
+      e.preventDefault();
+      move(1);
+      break;
+    case "ArrowUp":
+      e.preventDefault();
+      move(-1);
+      break;
+    case "Enter":
+      e.preventDefault();
+      if (entries[selected]?.url) open(entries[selected]);
+      break;
+    case "Escape":
+      e.preventDefault();
+      if (searchInput.value) {
+        searchInput.value = "";
+        show(treeEntries);
+      } else {
+        window.close();
+      }
+      break;
   }
 });
 
-function renderCommandList() {
-  const list = document.getElementById("command-list");
-  for (const c of COMMANDS) {
-    const li = document.createElement("li");
-    const kbd = document.createElement("kbd");
-    kbd.textContent = c.key;
-    li.append(kbd, c.label);
-    list.append(li);
+// The bookmarks bar folder: Chrome id "1" / Firefox id "toolbar_____".
+function barNode(roots) {
+  const top = roots[0].children ?? [];
+  return (
+    top.find((n) => n.folderType === "bookmarks-bar") ??
+    top.find((n) => n.id === "1" || n.id === "toolbar_____") ??
+    top[0]
+  );
+}
+
+function buildTree(node, depth = 0) {
+  const out = [];
+  for (const child of node?.children ?? []) {
+    if (child.url) {
+      out.push({ title: child.title || child.url, url: child.url, depth });
+    } else {
+      out.push({ title: child.title, depth, folder: true });
+      out.push(...buildTree(child, depth + 1));
+    }
   }
-}
-
-// Fire the command in the background and close. The background does the
-// actual work — this popup is gone as soon as focus moves.
-function dispatch(msg) {
-  api.runtime.sendMessage(msg);
-  window.close();
-}
-
-// --- bookmark fuzzy search ---
-
-async function enterSearchMode() {
-  bookmarks = await bookmarksPromise;
-  rootView.hidden = true;
-  searchView.hidden = false;
-  searchInput.focus();
-  search("");
+  return out;
 }
 
 function flatten(nodes, path = []) {
@@ -81,13 +94,17 @@ function flatten(nodes, path = []) {
 }
 
 function search(query) {
-  results = bookmarks
+  if (!query) {
+    show(treeEntries);
+    return;
+  }
+  const results = allBookmarks
     .map((b) => ({ ...b, score: scoreBookmark(query, b) }))
     .filter((b) => b.score > -Infinity)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 20);
-  selected = 0;
-  renderResults();
+    .slice(0, 20)
+    .map((b) => ({ title: b.title, url: b.url, depth: 0, host: b.matchUrl.split("/")[0], path: b.path }));
+  show(results);
 }
 
 // Title and URL are scored independently and the best wins, so a domain
@@ -118,54 +135,47 @@ function fuzzyScore(query, text) {
   return score - first / 10 - t.length / 100;
 }
 
-function renderResults() {
+function show(list) {
+  entries = list;
+  selected = entries.findIndex((e) => e.url);
+  render();
+}
+
+function move(dir) {
+  for (let i = selected + dir; i >= 0 && i < entries.length; i += dir) {
+    if (entries[i].url) {
+      selected = i;
+      render();
+      return;
+    }
+  }
+}
+
+function render() {
   resultList.replaceChildren();
-  results.forEach((b, i) => {
+  entries.forEach((entry, i) => {
     const li = document.createElement("li");
-    li.textContent = b.title;
-    const host = b.matchUrl.split("/")[0];
-    const span = document.createElement("span");
-    span.className = "path";
-    span.textContent = b.path ? `${host} · ${b.path}` : host;
-    li.append(span);
-    li.classList.toggle("selected", i === selected);
-    li.addEventListener("click", () => open(b));
+    li.style.paddingLeft = `${12 + entry.depth * 14}px`;
+    li.textContent = entry.title;
+    if (entry.folder) {
+      li.className = "folder";
+    } else {
+      if (entry.host) {
+        const span = document.createElement("span");
+        span.className = "path";
+        span.textContent = entry.path ? `${entry.host} · ${entry.path}` : entry.host;
+        li.append(span);
+      }
+      li.classList.toggle("selected", i === selected);
+      li.addEventListener("click", () => open(entry));
+    }
     resultList.append(li);
   });
+  resultList.querySelector(".selected")?.scrollIntoView({ block: "nearest" });
 }
 
-function onSearchKeydown(e) {
-  if (e.ctrlKey && (e.key === "n" || e.key === "p")) {
-    e.preventDefault();
-    selected = e.key === "n"
-      ? Math.min(selected + 1, results.length - 1)
-      : Math.max(selected - 1, 0);
-    renderResults();
-    return;
-  }
-  switch (e.key) {
-    case "ArrowDown":
-      e.preventDefault();
-      selected = Math.min(selected + 1, results.length - 1);
-      renderResults();
-      break;
-    case "ArrowUp":
-      e.preventDefault();
-      selected = Math.max(selected - 1, 0);
-      renderResults();
-      break;
-    case "Enter":
-      e.preventDefault();
-      if (results[selected]) open(results[selected]);
-      break;
-    case "Escape":
-      e.preventDefault();
-      window.close();
-      break;
-    // typing is handled by the input's "input" event
-  }
-}
-
-function open(bookmark) {
-  dispatch({ type: "open-url", url: bookmark.url });
+// Open in the background so the popup's death can't cut the work short.
+function open(entry) {
+  api.runtime.sendMessage({ type: "open-url", url: entry.url });
+  window.close();
 }
