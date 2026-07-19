@@ -16,7 +16,11 @@ let bookmarks = [];
 let results = [];
 let selected = 0;
 
+// Start fetching immediately so search mode is ready by the time `b` is hit.
+const bookmarksPromise = api.bookmarks.getTree().then(flatten);
+
 renderCommandList();
+searchInput.addEventListener("input", () => search(searchInput.value));
 
 document.addEventListener("keydown", (e) => {
   if (!searchView.hidden) {
@@ -56,7 +60,7 @@ function screenArea() {
 // --- bookmark fuzzy search ---
 
 async function enterSearchMode() {
-  bookmarks = flatten(await api.bookmarks.getTree());
+  bookmarks = await bookmarksPromise;
   rootView.hidden = true;
   searchView.hidden = false;
   searchInput.focus();
@@ -67,7 +71,13 @@ function flatten(nodes, path = []) {
   const out = [];
   for (const node of nodes) {
     if (node.url) {
-      out.push({ title: node.title || node.url, url: node.url, path: path.join("/") });
+      out.push({
+        title: node.title || node.url,
+        url: node.url,
+        // strip protocol/www noise once, so "ra" scores against "rakuten-sec.co.jp/…"
+        matchUrl: node.url.replace(/^[a-z]+:\/\/(www\.)?/, ""),
+        path: path.join("/"),
+      });
     }
     if (node.children) {
       out.push(...flatten(node.children, node.title ? [...path, node.title] : path));
@@ -78,12 +88,18 @@ function flatten(nodes, path = []) {
 
 function search(query) {
   results = bookmarks
-    .map((b) => ({ ...b, score: fuzzyScore(query, `${b.title} ${b.url}`) }))
+    .map((b) => ({ ...b, score: scoreBookmark(query, b) }))
     .filter((b) => b.score > -Infinity)
     .sort((a, b) => b.score - a.score)
     .slice(0, 20);
   selected = 0;
   renderResults();
+}
+
+// Title and URL are scored independently and the best wins, so a domain
+// prefix ("ra" → rakuten-sec.co.jp) ranks as high as a title match.
+function scoreBookmark(query, b) {
+  return Math.max(fuzzyScore(query, b.title) + 1, fuzzyScore(query, b.matchUrl));
 }
 
 // Subsequence match: -Infinity if query chars don't appear in order,
@@ -95,14 +111,17 @@ function fuzzyScore(query, text) {
   let score = 0;
   let ti = -1;
   let prev = -2;
+  let first = -1;
   for (const ch of q) {
     ti = t.indexOf(ch, ti + 1);
     if (ti === -1) return -Infinity;
     score += ti === prev + 1 ? 5 : 1;
     if (ti === 0 || " /-_.".includes(t[ti - 1])) score += 3;
+    if (first === -1) first = ti;
     prev = ti;
   }
-  return score - t.length / 100;
+  // matches near the start of the text beat matches buried deep in it
+  return score - first / 10 - t.length / 100;
 }
 
 function renderResults() {
@@ -110,12 +129,11 @@ function renderResults() {
   results.forEach((b, i) => {
     const li = document.createElement("li");
     li.textContent = b.title;
-    if (b.path) {
-      const span = document.createElement("span");
-      span.className = "path";
-      span.textContent = b.path;
-      li.append(span);
-    }
+    const host = b.matchUrl.split("/")[0];
+    const span = document.createElement("span");
+    span.className = "path";
+    span.textContent = b.path ? `${host} · ${b.path}` : host;
+    li.append(span);
     li.classList.toggle("selected", i === selected);
     li.addEventListener("click", () => open(b));
     resultList.append(li);
@@ -150,9 +168,7 @@ function onSearchKeydown(e) {
       e.preventDefault();
       window.close();
       break;
-    default:
-      // let the input update first, then re-filter
-      requestAnimationFrame(() => search(searchInput.value));
+    // typing is handled by the input's "input" event
   }
 }
 
