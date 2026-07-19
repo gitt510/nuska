@@ -8,9 +8,6 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     try {
       switch (msg.type) {
-        case "split":
-          await splitWindows(msg.fallbackArea);
-          break;
         case "merge":
           await mergeWindows();
           break;
@@ -28,47 +25,6 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   })();
   return true;
 });
-
-// chrome.system.display does not exist in Firefox; the popup sends its own
-// screen dimensions as a fallback.
-async function workArea(fallbackArea) {
-  if (api.system?.display) {
-    const displays = await api.system.display.getInfo();
-    const primary = displays.find((d) => d.isPrimary) ?? displays[0];
-    return primary.workArea;
-  }
-  return fallbackArea;
-}
-
-// Tile the current window on the left half and the most recent other
-// window (if any) on the right half of the primary display.
-async function splitWindows(fallbackArea) {
-  const area = await workArea(fallbackArea);
-  const half = Math.floor(area.width / 2);
-
-  const current = await api.windows.getLastFocused({ windowTypes: ["normal"] });
-  const other = (await api.windows.getAll())
-    .filter((w) => w.type === "normal" && w.id !== current.id)
-    .at(-1);
-
-  await api.windows.update(current.id, {
-    state: "normal",
-    left: area.left,
-    top: area.top,
-    width: half,
-    height: area.height,
-  });
-  if (other) {
-    await api.windows.update(other.id, {
-      state: "normal",
-      left: area.left + half,
-      top: area.top,
-      width: area.width - half,
-      height: area.height,
-    });
-    await api.windows.update(current.id, { focused: true });
-  }
-}
 
 // --- dev hot-reload (unpacked builds only) ---
 // An extension cannot watch its own source files, so scripts/dev-server.mjs

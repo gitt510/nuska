@@ -3,7 +3,6 @@ const api = globalThis.browser ?? globalThis.chrome;
 // prefix + key bindings. Edit here for now; an options page comes later.
 const COMMANDS = [
   { key: "b", label: "search bookmarks", run: enterSearchMode },
-  { key: "s", label: "split windows left / right", run: () => dispatch({ type: "split", fallbackArea: screenArea() }) },
   { key: "m", label: "merge all windows", run: () => dispatch({ type: "merge" }) },
 ];
 
@@ -50,11 +49,6 @@ function renderCommandList() {
 function dispatch(msg) {
   api.runtime.sendMessage(msg);
   window.close();
-}
-
-// Firefox has no system.display API; pass this popup's screen as fallback.
-function screenArea() {
-  return { left: 0, top: 0, width: screen.availWidth, height: screen.availHeight };
 }
 
 // --- bookmark fuzzy search ---
