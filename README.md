@@ -11,6 +11,16 @@ Keyboard launcher extension for Chrome and Firefox (working title).
 3. Prefix is `Ctrl+B` (`⌃B` on macOS). If an older binding is already
    installed, set it manually at `chrome://extensions/shortcuts`
 
+### How it opens
+
+`Ctrl+B` injects the launcher as a centered modal over the current page
+(top layer, above any page z-index). Pages that refuse injection
+(`chrome://`, the Web Store) get a centered popup window with the same UI.
+
+### Themes
+
+`Ctrl+T` inside the launcher toggles the theme (neon / hud). Saved per browser.
+
 ### Hot reload
 
 ```sh
