@@ -3,6 +3,12 @@
   "name": "wip-extension-cf",
   "version": "0.1.1",
   "description": "One shortcut opens your bookmarks bar as a tree with fuzzy search.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "permissions": [
     "bookmarks",
     "alarms",
@@ -20,7 +26,11 @@
     ]
   },
   "action": {
-    "default_title": "Launcher"
+    "default_title": "Launcher",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
   },
   "commands": {
     "_execute_action": {

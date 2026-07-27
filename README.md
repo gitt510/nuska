@@ -51,3 +51,7 @@ browser about 1s later — no manual ⟳.
   every 30s and otherwise behaves normally
 - Manifest edits are also picked up, but a changed `suggested_key` never
   re-applies to an existing install (Chrome applies it only at install time)
+
+## Credits
+
+Toolbar/app icon: `map` from [PrimeIcons](https://github.com/primefaces/primeicons) (MIT).
