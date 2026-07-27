@@ -6,10 +6,24 @@ Keyboard launcher extension for Chrome and Firefox (working title).
 
 ### Install (once per browser)
 
+Chrome:
+
 1. `chrome://extensions` → Developer mode ON
 2. "Load unpacked" → select this directory
 3. Prefix is `Ctrl+B` (`⌃B` on macOS). If an older binding is already
    installed, set it manually at `chrome://extensions/shortcuts`
+
+Firefox (permanent install — Firefox only accepts signed extensions):
+
+1. Store AMO API credentials
+   (<https://addons.mozilla.org/developers/addon/api/key/>) in 1Password as
+   item `firefox-addons` in the `Personal` vault, with fields `api-key` and
+   `api-secret`. `op.env` holds only `op://` references — no secrets on disk
+2. `just install-ff` — bumps the patch version, signs an unlisted build on
+   AMO (credentials injected via `op run`), and opens the signed `.xpi` in
+   Firefox; click "Add" in the prompt
+3. For development sessions, `just dev-ff` instead runs a throwaway Firefox
+   with the extension loaded and reload-on-save (no signing needed)
 
 ### How it opens
 
