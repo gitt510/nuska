@@ -1,6 +1,6 @@
 // Background (Chrome: MV3 service worker / Firefox: event page).
-// The launcher UI only selects; actions run here, because the UI dies the
-// moment focus moves away from it.
+// The overlay UIs only select; actions run here, because they die the moment
+// focus moves away from them.
 
 const api = globalThis.browser ?? globalThis.chrome;
 
@@ -11,7 +11,7 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         case "open-url": {
           // The overlay's sender tab pins the target window; the fallback
           // window passes the original window's id instead, because the tab
-          // must not open inside the launcher window itself.
+          // must not open inside the fallback window itself.
           const windowId = msg.windowId ?? sender.tab?.windowId;
           try {
             await api.tabs.create({ url: msg.url, ...(windowId != null && { windowId }) });
@@ -25,6 +25,11 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         case "get-tree":
           sendResponse({ ok: true, tree: await api.bookmarks.getTree() });
           break;
+        case "open-options":
+          // Content scripts have no runtime.openOptionsPage.
+          await api.runtime.openOptionsPage();
+          sendResponse({ ok: true });
+          break;
         default:
           throw new Error(`unknown message type: ${msg.type}`);
       }
@@ -36,29 +41,65 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return true;
 });
 
-// Ctrl+B (_execute_action) and the toolbar icon both land here. Primary UI
-// is the overlay injected into the page; pages that refuse injection
-// (chrome://, the Web Store, …) get a centered popup window instead.
-const FALLBACK = { width: 680, height: 480 };
+// Two overlays, same shape: injected into the page as a content script, with
+// a centered popup window as the fallback for pages that refuse injection
+// (chrome://, the Web Store, …). Both are reached by keyboard, which is what
+// grants activeTab — no host permission is involved.
+const OVERLAYS = {
+  launcher: { file: "launcher/launcher.js", page: "launcher/launcher.html", w: 680, h: 480 },
+  shortcuts: { file: "shortcuts/shortcuts.js", page: "shortcuts/shortcuts.html", w: 680, h: 400 },
+};
 
-api.action.onClicked.addListener(async (tab) => {
-  try {
-    await api.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ["launcher/launcher.js"],
-    });
-  } catch {
-    const win = await api.windows.getLastFocused();
-    await api.windows.create({
-      url: api.runtime.getURL(`launcher/launcher.html?origin=${tab.windowId}`),
-      type: "popup",
-      width: FALLBACK.width,
-      height: FALLBACK.height,
-      left: Math.round((win.left ?? 0) + ((win.width ?? FALLBACK.width) - FALLBACK.width) / 2),
-      top: Math.round((win.top ?? 0) + ((win.height ?? FALLBACK.height) - FALLBACK.height) * 0.22),
-    });
-  }
+// Ctrl+B (_execute_action) and the toolbar icon open the launcher; Ctrl+,
+// opens the shortcuts overlay. _execute_action never fires onCommand, so both
+// listeners are needed.
+api.action.onClicked.addListener((tab) => openOverlay("launcher", tab));
+
+api.commands.onCommand.addListener((command, tab) => {
+  if (command === "open-shortcuts") openOverlay("shortcuts", tab);
 });
+
+// Firefox puts no Options entry in the toolbar button's context menu the way
+// Chrome does, so the extension supplies one. Firefox event pages drop their
+// menus on restart and onInstalled does not fire then, hence both events.
+api.runtime.onInstalled.addListener(setupMenus);
+api.runtime.onStartup.addListener(setupMenus);
+
+async function setupMenus() {
+  await api.contextMenus.removeAll();
+  api.contextMenus.create({
+    id: "shortcuts-settings",
+    title: "Shortcuts settings",
+    contexts: ["action"],
+  });
+}
+
+api.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId === "shortcuts-settings") api.runtime.openOptionsPage();
+});
+
+async function openOverlay(name, tab) {
+  const { file, page, w, h } = OVERLAYS[name];
+  // Chrome declares onCommand's tab as optional; ask for it when it's missing.
+  const target = tab ?? (await api.tabs.query({ active: true, currentWindow: true }))[0];
+  if (target?.id != null) {
+    try {
+      await api.scripting.executeScript({ target: { tabId: target.id }, files: [file] });
+      return;
+    } catch {
+      // injection refused — fall through to the popup window
+    }
+  }
+  const win = await api.windows.getLastFocused();
+  await api.windows.create({
+    url: api.runtime.getURL(`${page}?origin=${target?.windowId ?? win.id}`),
+    type: "popup",
+    width: w,
+    height: h,
+    left: Math.round((win.left ?? 0) + ((win.width ?? w) - w) / 2),
+    top: Math.round((win.top ?? 0) + ((win.height ?? h) - h) * 0.22),
+  });
+}
 
 // --- dev hot-reload (unpacked builds only) ---
 // An extension cannot watch its own source files, so scripts/dev-server.mjs

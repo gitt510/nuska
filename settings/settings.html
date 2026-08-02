@@ -1,0 +1,280 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shortcuts — settings</title>
+    <style>
+      /* Palette shared with the overlays by copy — see shortcuts/shortcuts.js */
+      :root {
+        --bg: #14111f;
+        --fg: #e4e1f0;
+        --muted: #7a7690;
+        --accent: #ff2e88;
+        --match: #26e0e0;
+        --field-bg: rgba(255, 255, 255, 0.03);
+        --border: #2a2640;
+        --bad: #ff5a5a;
+        --font: system-ui, sans-serif;
+        --mono: ui-monospace, monospace;
+      }
+
+      :root.hud {
+        --bg: #0d1117;
+        --fg: #e8f0e8;
+        --muted: #66756b;
+        --accent: #ff5a1f;
+        --match: #ff5a1f;
+        --field-bg: rgba(232, 240, 232, 0.04);
+        --border: #22302a;
+        --font: ui-monospace, monospace;
+      }
+
+      /* Inputs are sized by their column, so padding and border have to sit
+         inside that width rather than adding to it. */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.5 var(--font);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .lede,
+      .note {
+        margin: 0 0 24px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .note {
+        margin: 24px 0 0;
+      }
+
+      kbd {
+        padding: 1px 5px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--match);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        /* The column widths below are the whole layout — without this, an
+           input's own intrinsic width gets a vote and the header stops
+           lining up with the field under it. */
+        table-layout: fixed;
+      }
+
+      th {
+        padding: 0 8px 6px;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-align: left;
+        text-transform: uppercase;
+      }
+
+      th:last-child,
+      td:last-child {
+        width: 32px;
+      }
+
+      th.key-col {
+        width: 90px;
+      }
+
+      th.title-col {
+        width: 28%;
+      }
+
+      td {
+        padding: 3px 4px;
+        vertical-align: top;
+      }
+
+      input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--field-bg);
+        color: var(--fg);
+        font: inherit;
+        font-size: 13px;
+      }
+
+      input:focus {
+        border-color: var(--accent);
+        outline: none;
+      }
+
+      input.key {
+        color: var(--accent);
+        font-family: var(--mono);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+      }
+
+      input.bad {
+        border-color: var(--bad);
+      }
+
+      /* A placeholder must never read as a saved value — .key would otherwise
+         render its example in the accent colour, bold, like real data. */
+      ::placeholder {
+        color: var(--muted);
+        font-weight: 400;
+        letter-spacing: normal;
+        opacity: 1;
+      }
+
+      .why {
+        display: block;
+        padding: 3px 4px 0;
+        color: var(--bad);
+        font-size: 11px;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: none;
+        color: var(--muted);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      button:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .del {
+        width: 30px;
+        height: 34px;
+        font-size: 15px;
+        line-height: 1;
+      }
+
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 16px;
+        padding: 0 4px;
+      }
+
+      #add {
+        padding: 7px 14px;
+      }
+
+      #status {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      #status.error {
+        color: var(--bad);
+      }
+
+      details {
+        margin-top: 32px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+      }
+
+      summary {
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      textarea {
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--field-bg);
+        color: var(--fg);
+        font-family: var(--mono);
+        font-size: 12px;
+        resize: vertical;
+      }
+
+      textarea:focus {
+        border-color: var(--accent);
+        outline: none;
+      }
+
+      #import-run {
+        padding: 7px 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Shortcuts</h1>
+    <p class="lede" id="binding"></p>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="key-col">Key</th>
+          <th class="title-col">Title</th>
+          <th>URL</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <div class="bar">
+      <button id="add" type="button">Add shortcut</button>
+      <span id="status"></span>
+    </div>
+
+    <p class="note">
+      Keys are lowercase letters and digits. No key may be the start of another
+      one — that is what lets a completed key fire the moment it is typed.
+      Rows with an error are kept on screen but left out of the saved set.
+      A URL without a scheme gets <code>https://</code> put in front of it.
+      Saved to browser sync storage.
+    </p>
+
+    <details>
+      <summary>Import</summary>
+      <p class="note">
+        Paste a list of shortcuts — this page's own format, or a
+        ShortcutKey2URL export. Keys are lowercased, a key that already exists
+        is replaced, and entries without a URL are skipped.
+      </p>
+      <textarea
+        id="import-text"
+        rows="8"
+        spellcheck="false"
+        placeholder='[{"key": "ex", "title": "Example", "url": "https://example.com"}]'
+      ></textarea>
+      <button id="import-run" type="button">Import</button>
+    </details>
+
+    <script src="settings.js"></script>
+  </body>
+</html>

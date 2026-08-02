@@ -10,8 +10,11 @@ Chrome:
 
 1. `chrome://extensions` → Developer mode ON
 2. "Load unpacked" → select this directory
-3. Prefix is `Ctrl+B` (`⌃B` on macOS). If an older binding is already
-   installed, set it manually at `chrome://extensions/shortcuts`
+3. Prefixes are `Ctrl+B` and `Ctrl+,` (`⌃B` / `⌃,` on macOS). Chrome applies
+   `suggested_key` only at install time, so an install that predates a
+   binding never picks it up — set it manually at
+   `chrome://extensions/shortcuts`. The settings page reports what is
+   actually bound
 
 Firefox (permanent install — Firefox only accepts signed extensions):
 
@@ -28,12 +31,43 @@ Firefox (permanent install — Firefox only accepts signed extensions):
 ### How it opens
 
 `Ctrl+B` injects the launcher as a centered modal over the current page
-(top layer, above any page z-index). Pages that refuse injection
-(`chrome://`, the Web Store) get a centered popup window with the same UI.
+(top layer, above any page z-index). `Ctrl+,` opens the shortcuts overlay the
+same way. Pages that refuse injection (`chrome://`, the Web Store) get a
+centered popup window with the same UI.
+
+Both are keyboard-only entry points, which is what grants `activeTab` — no
+host permission is involved.
+
+### Shortcuts
+
+`Ctrl+,` lists your key-to-URL shortcuts. Type a key and it opens the moment
+the key is complete, so the usual path is `Ctrl+,` then `gh`. A partial key
+dims what no longer matches instead of removing it, so the whole set stays on
+screen the entire time; `⌃N` / `⌃P` and `↵` work when the key is forgotten.
+
+Settings is the only place shortcuts are edited — key, title, URL, one row
+each, saved to browser sync storage as you type. Three ways in: `⌃O` in the
+overlay, right-click the toolbar icon → **Shortcuts settings**, or
+`about:addons` → the extension → Preferences.
+
+- Keys are lowercase letters and digits. **No key may be the start of
+  another one** — that is what lets a completed key fire without `↵`. The
+  settings page refuses to save a row that breaks it
+- Only `http` and `https` URLs are saved. A bare `github.com` gets `https://`
+  put in front of it and the field is rewritten to what will be stored
+- **Import** takes a bare JSON array, this page's own `{ "shortcuts": [...] }`,
+  or a ShortcutKey2URL export as-is. Keys are lowercased, a key already in the
+  table is replaced, and entries without a URL — SK2U's script-only actions —
+  are skipped. There is no export: browser sync already holds the list
+- A row with an error stays on screen and is left out of the saved set, so
+  one broken row cannot take the others down with it
+- The whole list is one sync item, capped at 8 KB (roughly 80 shortcuts).
+  Settings reports the overflow instead of writing
 
 ### Themes
 
-`Ctrl+T` inside the launcher toggles the theme (neon / hud). Saved per browser.
+`Ctrl+T` inside either overlay toggles the theme (neon / hud). Saved per
+browser, shared by the launcher, the shortcuts overlay and settings.
 
 ### Hot reload
 

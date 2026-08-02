@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "wip-extension-cf",
-  "version": "0.1.1",
-  "description": "One shortcut opens your bookmarks bar as a tree with fuzzy search.",
+  "version": "0.1.5",
+  "description": "One shortcut opens your bookmarks bar as a tree with fuzzy search, another fires your key-to-URL shortcuts.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -14,7 +14,8 @@
     "alarms",
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "contextMenus"
   ],
   "host_permissions": [
     "http://127.0.0.1/*"
@@ -32,6 +33,10 @@
       "32": "icons/icon-32.png"
     }
   },
+  "options_ui": {
+    "page": "settings/settings.html",
+    "open_in_tab": true
+  },
   "commands": {
     "_execute_action": {
       "suggested_key": {
@@ -39,6 +44,13 @@
         "mac": "MacCtrl+B"
       },
       "description": "Open the launcher"
+    },
+    "open-shortcuts": {
+      "suggested_key": {
+        "default": "Ctrl+Comma",
+        "mac": "MacCtrl+Comma"
+      },
+      "description": "Open shortcuts"
     }
   },
   "browser_specific_settings": {
