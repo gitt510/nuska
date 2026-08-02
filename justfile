@@ -11,6 +11,12 @@ dev:
 dev-ff:
     npx web-ext run --source-dir .
 
+# Copy seed shortcuts to the clipboard (dev-ff's profile starts empty)
+[group('dev')]
+seed:
+    pbcopy < scripts/seed.json
+    @echo "11 shortcuts copied — settings -> Import -> paste -> Import"
+
 # Bump the manifest patch version; AMO refuses to re-sign the same version
 [group('install')]
 bump:

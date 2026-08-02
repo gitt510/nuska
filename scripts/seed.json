@@ -1,0 +1,13 @@
+[
+  { "key": "c", "title": "Claude", "url": "https://claude.ai/new" },
+  { "key": "d", "title": "Google Drive", "url": "https://drive.google.com" },
+  { "key": "gh", "title": "GitHub", "url": "https://github.com" },
+  { "key": "gp", "title": "Pull requests", "url": "https://github.com/pulls" },
+  { "key": "m", "title": "Gmail", "url": "https://mail.google.com" },
+  { "key": "n", "title": "Neon", "url": "https://console.neon.tech" },
+  { "key": "s", "title": "Slack", "url": "https://slack.com" },
+  { "key": "t", "title": "ToDo", "url": "https://tasks.google.com" },
+  { "key": "x", "title": "X", "url": "https://x.com" },
+  { "key": "y", "title": "YouTube Music", "url": "https://music.youtube.com" },
+  { "key": "z", "title": "Zenn", "url": "https://zenn.dev" }
+]
