@@ -19,40 +19,33 @@
     return;
   }
 
-  // A board of backlit keycaps. Legends sit unlit on a dark warm board; the
-  // typed prefix presses in and lights amber, and the header echoes each
-  // keystroke as a lit cap — red when nothing matches. The launcher keeps its
-  // own neon/hud look; this overlay is on screen for half a second and reads
-  // better as one confident thing than as two switchable ones.
+  // Monochrome: brightness is the only signal. Each key is one chip; the
+  // typed prefix lights white while everything unreachable falls to near-
+  // black, and the header echoes the buffer as an inverted chip. The palette
+  // is shared with the settings page by copy (see settings/settings.html).
   const CSS = `
 dialog {
-  --bg: #211a12;
-  --fg: #ede3d1;
-  --muted: #8d8070;
-  --legend: #a2937a;
-  --amber: #ffbe5c;
-  --glow: rgba(255, 174, 66, 0.55);
-  --cap-edge: #453927;
-  --cap-under: #0f0a05;
-  --line: #322919;
-  --miss: #ff8a70;
+  --bg: #161616;
+  --fg: #f0f0f0;
+  --muted: #9c9c9c;
+  --faint: #585858;
+  --line: #2b2b2b;
+  --chip: #3a3a3a;
+  --hot: #6b6b6b;
   --font: system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
 
   width: min(640px, 94vw);
   margin: 16vh auto auto;
   padding: 0;
-  border: 1px solid #3b3120;
+  border: 1px solid #2e2e2e;
   border-radius: 12px;
   overflow: clip;
-  /* faint light from above, as if the board sits under a lamp */
-  background:
-    radial-gradient(120% 90% at 50% -20%, rgba(255, 190, 92, 0.07), transparent 60%),
-    var(--bg);
+  background: var(--bg);
   color: var(--fg);
   font: 14px/1.45 var(--font);
   box-shadow:
-    inset 0 1px 0 rgba(255, 235, 200, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 24px 80px rgba(0, 0, 0, 0.6);
 }
 
@@ -68,7 +61,7 @@ dialog[open] {
 }
 
 dialog::backdrop {
-  background: rgba(14, 10, 4, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(3px);
 }
 
@@ -91,7 +84,7 @@ dialog.windowed {
 }
 
 /* The buffer lives in a real input for free text editing (Backspace, IME
-   rejection), but the echo caps are the display — the field itself is hidden. */
+   rejection), but the echo chip is the display — the field itself is hidden. */
 .buf {
   width: 1px;
   height: 1px;
@@ -116,45 +109,55 @@ dialog.windowed {
 
 .echo {
   display: flex;
-  gap: 5px;
+  align-items: center;
+  gap: 10px;
 }
 
-.cap {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 22px;
-  border: 1px solid var(--cap-edge);
-  border-bottom-color: var(--cap-under);
-  border-radius: 6px;
-  background: linear-gradient(#352b1c, #2a2114);
-  box-shadow: 0 2px 0 var(--cap-under), inset 0 1px 0 rgba(255, 235, 200, 0.07);
-  color: var(--legend);
-  font: 600 12px/1 var(--mono);
-  transition: transform 70ms, box-shadow 70ms, color 70ms;
+.nomatch {
+  color: var(--faint);
+  font-size: 12px;
 }
 
-/* pressed: the cap sinks onto the board and the backlight comes through */
-.cap.lit {
-  transform: translateY(2px);
-  border-color: #6a5121;
-  background: linear-gradient(#4a3a1e, #3a2d15);
-  box-shadow: 0 0 0 var(--cap-under), 0 0 14px rgba(255, 174, 66, 0.25),
-    inset 0 1px 0 rgba(255, 220, 150, 0.12);
-  color: var(--amber);
-  text-shadow: 0 0 9px var(--glow);
+/* One chip per shortcut — "gp" is a single unit, not two keys. */
+.key {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 24px;
+  padding: 3px 7px;
+  border: 1px solid var(--chip);
+  border-radius: 5px;
+  color: var(--muted);
+  font: 600 12px/1.2 var(--mono);
+  letter-spacing: 0.05em;
+  transition: border-color 70ms;
 }
 
-.cap.miss {
-  border-color: #6a3524;
-  color: var(--miss);
-  text-shadow: 0 0 9px rgba(255, 110, 80, 0.5);
-  box-shadow: 0 0 0 var(--cap-under), 0 0 14px rgba(255, 110, 80, 0.2);
+.key span {
+  transition: color 70ms;
+}
+
+/* the typed prefix lights up inside the chip */
+.key span.on {
+  color: var(--fg);
+}
+
+.key.hot {
+  border-color: var(--hot);
+}
+
+/* the header echo: what was pressed, inverted */
+.key.fill {
+  padding: 4px 9px;
+  border-color: var(--fg);
+  background: var(--fg);
+  color: #111;
+  font-size: 13px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   dialog[open],
-  .cap {
+  .key,
+  .key span {
     transition: none;
   }
 }
@@ -177,11 +180,11 @@ dialog.windowed ul {
   max-height: calc(100vh - 80px);
 }
 
-/* A fixed key track: caps have to line up down a column, and they cannot if
-   each cell sizes its own. 44px fits two 20px caps and their gap. */
+/* A fixed key track: chips have to line up down a column, and they cannot if
+   each cell sizes its own. 48px fits a two-character chip. */
 li {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
   column-gap: 10px;
   padding: 5px 8px;
@@ -191,18 +194,13 @@ li {
 }
 
 li:hover {
-  background: rgba(255, 235, 200, 0.04);
+  background: rgba(255, 255, 255, 0.045);
 }
 
 /* Narrowing never removes a row — an unreachable key stays readable so the
    whole set is still in view while typing. */
 li.dim {
-  opacity: 0.28;
-}
-
-.keys {
-  display: flex;
-  gap: 3px;
+  opacity: 0.18;
 }
 
 .title {
@@ -220,12 +218,11 @@ li.dim {
   cursor: default;
 }
 
+/* monochrome: full white is the alarm */
 .notice.bad {
-  color: var(--miss);
+  color: var(--fg);
 }
 
-/* The link whispers from the corner in the board's unlit grey; amber is
-   reserved for what typing lights up. */
 .link {
   margin-left: auto;
   padding: 0;
@@ -235,22 +232,22 @@ li.dim {
   font: inherit;
   cursor: pointer;
   text-decoration: underline;
-  text-decoration-color: rgba(141, 128, 112, 0.45);
+  text-decoration-color: rgba(156, 156, 156, 0.45);
 }
 
 .link:hover {
-  color: var(--amber);
+  color: var(--fg);
+}
+
+.link:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
 }
 
 .notice .link {
   margin: 0;
-  color: var(--amber);
-  text-decoration-color: rgba(255, 190, 92, 0.4);
-}
-
-.link:focus-visible {
-  outline: 1px solid var(--amber);
-  outline-offset: 2px;
+  color: var(--fg);
+  text-decoration-color: rgba(240, 240, 240, 0.4);
 }
 `;
 
@@ -261,7 +258,8 @@ li.dim {
 
   let shortcuts = []; // every shortcut, sorted by key — all of them stay rendered
   let rows = []; // row elements parallel to shortcuts
-  let rowCaps = []; // per-row keycap elements, parallel to shortcuts
+  let rowChips = []; // the key chip of each row, parallel to shortcuts
+  let rowChars = []; // per-row character spans inside the chip
   let hits = []; // indices matching the current buffer
   let ui = null; // { host, dialog, input, head, prompt, echo, list } while open
 
@@ -374,7 +372,8 @@ li.dim {
     shortcuts.forEach((s, i) => {
       const hit = s.key.startsWith(buf);
       rows[i].classList.toggle("dim", !hit);
-      rowCaps[i].forEach((cap, j) => cap.classList.toggle("lit", hit && j < buf.length));
+      rowChips[i].classList.toggle("hot", hit && buf.length > 0);
+      rowChars[i].forEach((c, j) => c.classList.toggle("on", hit && j < buf.length));
       if (hit) hits.push(i);
     });
     echoRender(buf, buf.length > 0 && hits.length === 0);
@@ -385,17 +384,20 @@ li.dim {
     if (exact) fire(exact);
   }
 
-  // The header shows what was pressed, as pressed caps — red when it matches
-  // nothing, which is also the only state that needs Escape to clear.
+  // The header shows the buffer as an inverted chip — with a plain word next
+  // to it when it matches nothing, which is the only state Escape must clear.
   function echoRender(buf, miss) {
     ui.head.classList.toggle("typing", buf.length > 0);
-    ui.echo.replaceChildren(
-      ...[...buf].map((ch) => {
-        const cap = el("span", miss ? "cap lit miss" : "cap lit");
-        cap.textContent = ch;
-        return cap;
-      }),
-    );
+    ui.echo.replaceChildren();
+    if (!buf) return;
+    const chip = el("span", "key fill");
+    chip.textContent = buf;
+    ui.echo.append(chip);
+    if (miss) {
+      const label = el("span", "nomatch");
+      label.textContent = "no match — esc clears";
+      ui.echo.append(label);
+    }
   }
 
   function onKeydown(e) {
@@ -417,7 +419,8 @@ li.dim {
   function render() {
     const { list } = ui;
     rows = [];
-    rowCaps = [];
+    rowChips = [];
+    rowChars = [];
     list.replaceChildren();
     if (!shortcuts.length) {
       const empty = notice("No shortcuts yet — add one in ");
@@ -429,19 +432,20 @@ li.dim {
       const li = document.createElement("li");
       // A cell has no room for the host, so it moves to the hover text.
       li.title = entry.host ? `${entry.title} — ${entry.host}` : entry.title;
-      const keys = el("span", "keys");
-      const caps = [...entry.key].map((ch) => {
-        const cap = el("span", "cap");
-        cap.textContent = ch;
-        keys.append(cap);
-        return cap;
+      const chip = el("span", "key");
+      const chars = [...entry.key].map((ch) => {
+        const c = document.createElement("span");
+        c.textContent = ch;
+        chip.append(c);
+        return c;
       });
       const title = el("span", "title");
       title.textContent = entry.title;
-      li.append(keys, title);
+      li.append(chip, title);
       li.addEventListener("click", () => fire(entry));
       rows.push(li);
-      rowCaps.push(caps);
+      rowChips.push(chip);
+      rowChars.push(chars);
       list.append(li);
     });
     narrow("");

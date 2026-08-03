@@ -24,11 +24,7 @@
   start();
 
   async function start() {
-    const [local, synced] = await Promise.all([
-      api.storage.local.get("theme"),
-      api.storage.sync.get("shortcuts"),
-    ]);
-    document.documentElement.classList.toggle("hud", local.theme === "hud");
+    const synced = await api.storage.sync.get("shortcuts");
     draft = (synced.shortcuts ?? []).map((s) => ({
       key: s.key ?? "",
       title: s.title ?? "",

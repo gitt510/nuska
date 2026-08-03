@@ -5,29 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Shortcuts — settings</title>
     <style>
-      /* Palette shared with the overlays by copy — see shortcuts/shortcuts.js */
+      /* Monochrome, shared with the overlay by copy (see shortcuts/shortcuts.js):
+         brightness is the only signal, full white is the alarm. */
       :root {
-        --bg: #14111f;
-        --fg: #e4e1f0;
-        --muted: #7a7690;
-        --accent: #ff2e88;
-        --match: #26e0e0;
+        --bg: #161616;
+        --fg: #f0f0f0;
+        --muted: #9c9c9c;
         --field-bg: rgba(255, 255, 255, 0.03);
-        --border: #2a2640;
-        --bad: #ff5a5a;
+        --border: #2b2b2b;
+        --hot: #6b6b6b;
         --font: system-ui, sans-serif;
-        --mono: ui-monospace, monospace;
-      }
-
-      :root.hud {
-        --bg: #0d1117;
-        --fg: #e8f0e8;
-        --muted: #66756b;
-        --accent: #ff5a1f;
-        --match: #ff5a1f;
-        --field-bg: rgba(232, 240, 232, 0.04);
-        --border: #22302a;
-        --font: ui-monospace, monospace;
+        --mono: ui-monospace, "SF Mono", Menlo, monospace;
       }
 
       /* Inputs are sized by their column, so padding and border have to sit
@@ -66,9 +54,9 @@
 
       kbd {
         padding: 1px 5px;
-        border: 1px solid var(--border);
+        border: 1px solid var(--hot);
         border-radius: 4px;
-        color: var(--match);
+        color: var(--fg);
         font-family: var(--mono);
         font-size: 11px;
       }
@@ -122,19 +110,19 @@
       }
 
       input:focus {
-        border-color: var(--accent);
+        border-color: var(--hot);
         outline: none;
       }
 
       input.key {
-        color: var(--accent);
+        color: var(--fg);
         font-family: var(--mono);
         font-weight: 600;
         letter-spacing: 0.06em;
       }
 
       input.bad {
-        border-color: var(--bad);
+        border-color: var(--fg);
       }
 
       /* A placeholder must never read as a saved value — .key would otherwise
@@ -149,8 +137,9 @@
       .why {
         display: block;
         padding: 3px 4px 0;
-        color: var(--bad);
+        color: var(--fg);
         font-size: 11px;
+        font-weight: 600;
       }
 
       button {
@@ -163,8 +152,8 @@
       }
 
       button:hover {
-        border-color: var(--accent);
-        color: var(--accent);
+        border-color: var(--hot);
+        color: var(--fg);
       }
 
       .del {
@@ -192,7 +181,8 @@
       }
 
       #status.error {
-        color: var(--bad);
+        color: var(--fg);
+        font-weight: 600;
       }
 
       details {
@@ -221,7 +211,7 @@
       }
 
       textarea:focus {
-        border-color: var(--accent);
+        border-color: var(--hot);
         outline: none;
       }
 

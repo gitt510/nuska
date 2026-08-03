@@ -67,9 +67,9 @@ overlay, right-click the toolbar icon → **Shortcuts settings**, or
 
 ### Themes
 
-`Ctrl+T` inside the launcher toggles the theme (neon / hud). Saved per
-browser, shared by the launcher and settings. The shortcuts overlay keeps its
-own single look — backlit keycaps on a dark board.
+`Ctrl+T` inside the launcher toggles the launcher theme (neon / hud), saved
+per browser. The shortcuts overlay and settings are monochrome — brightness
+is the only signal, full white is the alarm.
 
 ### Hot reload
 
