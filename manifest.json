@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "wip-extension-cf",
-  "version": "0.1.5",
+  "version": "0.1.8",
   "description": "One shortcut opens your bookmarks bar as a tree with fuzzy search, another fires your key-to-URL shortcuts.",
   "icons": {
     "16": "icons/icon-16.png",
