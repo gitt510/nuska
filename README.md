@@ -26,7 +26,9 @@ Firefox (permanent install — Firefox only accepts signed extensions):
    AMO (credentials injected via `op run`), and opens the signed `.xpi` in
    Firefox; click "Add" in the prompt
 3. For development sessions, `just dev-ff` instead runs a throwaway Firefox
-   with the extension loaded and reload-on-save (no signing needed)
+   with the extension loaded and reload-on-save (no signing needed). The
+   empty profile seeds itself with `src/dev-seed.json` on install —
+   development installs only, and only when there are no shortcuts yet
 
 ### How it opens
 

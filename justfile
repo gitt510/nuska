@@ -11,12 +11,6 @@ dev:
 dev-ff:
     npx web-ext run --source-dir src
 
-# Copy seed shortcuts to the clipboard (dev-ff's profile starts empty)
-[group('dev')]
-seed:
-    pbcopy < scripts/seed.json
-    @echo "11 shortcuts copied — settings -> Import -> paste -> Import"
-
 # Bump the manifest patch version; AMO refuses to re-sign the same version
 [group('install')]
 bump:
@@ -25,7 +19,7 @@ bump:
 # Upload the extension to AMO for signing, download the signed .xpi into web-ext-artifacts/
 [group('install')]
 sign:
-    op run --env-file=op.env -- npx web-ext sign --source-dir src --artifacts-dir web-ext-artifacts --channel unlisted
+    op run --env-file=op.env -- npx web-ext sign --source-dir src --artifacts-dir web-ext-artifacts --channel unlisted --ignore-files dev-seed.json
 
 # Install the newest signed .xpi into Firefox (opens the install prompt)
 [group('install')]

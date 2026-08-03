@@ -101,6 +101,25 @@ async function openOverlay(name, tab) {
   });
 }
 
+// --- dev seed (development installs only) ---
+// web-ext run starts from an empty throwaway profile every time, so a fresh
+// development install with no shortcuts gets the sample set. Signed installs
+// report installType "normal" and never reach this; a profile that already
+// has shortcuts is left alone.
+api.runtime.onInstalled.addListener(async ({ reason }) => {
+  if (reason !== "install") return;
+  try {
+    const { installType } = await api.management.getSelf();
+    if (installType !== "development") return;
+    const { shortcuts } = await api.storage.sync.get("shortcuts");
+    if (shortcuts?.length) return;
+    const seed = await (await fetch(api.runtime.getURL("dev-seed.json"))).json();
+    await api.storage.sync.set({ shortcuts: seed });
+  } catch (err) {
+    console.warn("dev seed skipped:", err); // convenience only — never fatal
+  }
+});
+
 // --- dev hot-reload (unpacked builds only) ---
 // An extension cannot watch its own source files, so scripts/dev-server.mjs
 // serves a change stamp on localhost; we poll it and runtime.reload() when it
