@@ -9,7 +9,7 @@ Keyboard launcher extension for Chrome and Firefox (working title).
 Chrome:
 
 1. `chrome://extensions` → Developer mode ON
-2. "Load unpacked" → select this directory
+2. "Load unpacked" → select the `src/` directory
 3. Prefixes are `Ctrl+B` and `Ctrl+,` (`⌃B` / `⌃,` on macOS). Chrome applies
    `suggested_key` only at install time, so an install that predates a
    binding never picks it up — set it manually at

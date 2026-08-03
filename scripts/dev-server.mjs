@@ -6,11 +6,11 @@ import { watch } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const PORT = 17345;
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../src/", import.meta.url));
 let stamp = String(Date.now());
 
 watch(root, { recursive: true }, (_event, file) => {
-  if (!file || file.startsWith(".git") || file.startsWith("scripts")) return;
+  if (!file) return;
   stamp = String(Date.now());
   console.log(`changed: ${file}`);
 });
