@@ -6,8 +6,8 @@
 //
 // Execute-only — the settings page owns the list. The whole set stays on
 // screen the entire time: typing dims what no longer matches rather than
-// removing it, so the keys are always in view. A lone full match fires at
-// once, which makes the usual path Ctrl+, then the key, with no Enter.
+// removing it, so the keys are always in view. The buffer equalling a key IS
+// the action — there is no selection to move or confirm.
 (() => {
   const api = globalThis.browser ?? globalThis.chrome;
   // Extension pages live under runtime.getURL(""); injected ones never do.
@@ -19,66 +19,57 @@
     return;
   }
 
-  const THEMES = ["neon", "hud"];
-  // Columns in the key grid. Drives both the CSS tracks and the row-wise
-  // arrow keys, so the two can't drift apart.
-  const COLUMNS = 3;
-  // The palette is a copy of launcher.js's, deliberately: sharing it would
-  // mean a fetched stylesheet or an injected shell, and neither is worth it
-  // for two consumers. Next change to either look is the time to extract.
+  // A board of backlit keycaps. Legends sit unlit on a dark warm board; the
+  // typed prefix presses in and lights amber, and the header echoes each
+  // keystroke as a lit cap — red when nothing matches. The launcher keeps its
+  // own neon/hud look; this overlay is on screen for half a second and reads
+  // better as one confident thing than as two switchable ones.
   const CSS = `
 dialog {
-  /* neon (default) */
-  --bg: #14111f;
-  --fg: #e4e1f0;
-  --muted: #7a7690;
-  --accent: #ff2e88;
-  --match: #26e0e0;
-  --selected-bg: rgba(255, 46, 136, 0.13);
-  --border: #2a2640;
+  --bg: #211a12;
+  --fg: #ede3d1;
+  --muted: #8d8070;
+  --legend: #a2937a;
+  --amber: #ffbe5c;
+  --glow: rgba(255, 174, 66, 0.55);
+  --cap-edge: #453927;
+  --cap-under: #0f0a05;
+  --line: #322919;
+  --miss: #ff8a70;
   --font: system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
 
-  width: min(660px, 94vw);
+  width: min(640px, 94vw);
   margin: 16vh auto auto;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  border: 1px solid #3b3120;
+  border-radius: 12px;
   overflow: clip;
-  background: var(--bg);
+  /* faint light from above, as if the board sits under a lamp */
+  background:
+    radial-gradient(120% 90% at 50% -20%, rgba(255, 190, 92, 0.07), transparent 60%),
+    var(--bg);
   color: var(--fg);
   font: 14px/1.45 var(--font);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 200, 0.06),
+    0 24px 80px rgba(0, 0, 0, 0.6);
+}
+
+dialog[open] {
+  transition: opacity 130ms ease-out, transform 130ms ease-out;
+}
+
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 dialog::backdrop {
-  background: rgba(10, 8, 18, 0.45);
+  background: rgba(14, 10, 4, 0.5);
   backdrop-filter: blur(3px);
-}
-
-/* neon sign */
-dialog::before {
-  content: "";
-  display: block;
-  height: 2px;
-  background: linear-gradient(90deg, #ff2e88, #26e0e0);
-}
-
-dialog.hud {
-  --bg: #0d1117;
-  --fg: #e8f0e8;
-  --muted: #66756b;
-  --accent: #ff5a1f;
-  --match: #ff5a1f;
-  --selected-bg: rgba(232, 240, 232, 0.07);
-  --border: #22302a;
-  --font: ui-monospace, monospace;
-  font-size: 13px;
-  border-radius: 4px;
-}
-
-dialog.hud::before {
-  height: 1px;
-  background: var(--border);
 }
 
 dialog.windowed {
@@ -93,45 +84,90 @@ dialog.windowed {
 .head {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--border);
+  gap: 5px;
+  min-height: 48px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
 }
 
-input {
+/* The buffer lives in a real input for free text editing (Backspace, IME
+   rejection), but the echo caps are the display — the field itself is hidden. */
+.buf {
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.prompt {
+  display: flex;
   flex: 1;
-  padding: 13px 16px;
-  border: none;
-  outline: none;
-  background: none;
-  color: var(--match);
-  caret-color: var(--match);
-  font: inherit;
-  font-family: ui-monospace, monospace;
-  font-size: 15px;
-  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
 }
 
-input::placeholder {
-  color: var(--muted);
-  letter-spacing: normal;
-  font-family: var(--font);
+.head.typing .prompt {
+  display: none;
 }
 
-.count {
-  padding-right: 14px;
-  color: var(--muted);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
+.echo {
+  display: flex;
+  gap: 5px;
+}
+
+.cap {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 22px;
+  border: 1px solid var(--cap-edge);
+  border-bottom-color: var(--cap-under);
+  border-radius: 6px;
+  background: linear-gradient(#352b1c, #2a2114);
+  box-shadow: 0 2px 0 var(--cap-under), inset 0 1px 0 rgba(255, 235, 200, 0.07);
+  color: var(--legend);
+  font: 600 12px/1 var(--mono);
+  transition: transform 70ms, box-shadow 70ms, color 70ms;
+}
+
+/* pressed: the cap sinks onto the board and the backlight comes through */
+.cap.lit {
+  transform: translateY(2px);
+  border-color: #6a5121;
+  background: linear-gradient(#4a3a1e, #3a2d15);
+  box-shadow: 0 0 0 var(--cap-under), 0 0 14px rgba(255, 174, 66, 0.25),
+    inset 0 1px 0 rgba(255, 220, 150, 0.12);
+  color: var(--amber);
+  text-shadow: 0 0 9px var(--glow);
+}
+
+.cap.miss {
+  border-color: #6a3524;
+  color: var(--miss);
+  text-shadow: 0 0 9px rgba(255, 110, 80, 0.5);
+  box-shadow: 0 0 0 var(--cap-under), 0 0 14px rgba(255, 110, 80, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog[open],
+  .cap {
+    transition: none;
+  }
 }
 
 /* Alphabetical, read across then down. The point of the grid is that the whole
    key set is takeable in at a glance, which one tall column never is. */
 ul {
   display: grid;
-  grid-template-columns: repeat(${COLUMNS}, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-content: start;
-  gap: 1px 10px;
+  gap: 3px 12px;
   margin: 0;
-  padding: 10px 12px;
+  padding: 12px 14px;
   list-style: none;
   max-height: min(52vh, 440px);
   overflow-y: auto;
@@ -141,101 +177,80 @@ dialog.windowed ul {
   max-height: calc(100vh - 80px);
 }
 
-/* A fixed key track rather than max-content: the keys have to line up down a
-   column, and they cannot line up if each cell sizes its own. */
+/* A fixed key track: caps have to line up down a column, and they cannot if
+   each cell sizes its own. 44px fits two 20px caps and their gap. */
 li {
   display: grid;
-  grid-template-columns: 2.6em minmax(0, 1fr);
-  align-items: baseline;
-  column-gap: 8px;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
   padding: 5px 8px;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: opacity 90ms;
+}
+
+li:hover {
+  background: rgba(255, 235, 200, 0.04);
 }
 
 /* Narrowing never removes a row — an unreachable key stays readable so the
    whole set is still in view while typing. */
 li.dim {
-  opacity: 0.3;
+  opacity: 0.28;
 }
 
-.key {
-  color: var(--accent);
-  font-family: ui-monospace, monospace;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+.keys {
+  display: flex;
+  gap: 3px;
 }
 
-li .title {
+.title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-li.selected {
-  position: relative;
-  background-color: var(--selected-bg);
-}
-
-/* targeting reticle */
-dialog.hud li.selected::before,
-dialog.hud li.selected::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  bottom: 2px;
-  width: 6px;
-}
-
-dialog.hud li.selected::before {
-  left: 4px;
-  border: 1px solid var(--accent);
-  border-right: none;
-}
-
-dialog.hud li.selected::after {
-  right: 4px;
-  border: 1px solid var(--accent);
-  border-left: none;
+  font-size: 13px;
 }
 
 .notice {
   grid-column: 1 / -1;
   display: block;
-  padding: 16px;
+  padding: 14px 8px;
   color: var(--muted);
   cursor: default;
 }
 
 .notice.bad {
-  color: #ff7676;
+  color: var(--miss);
 }
 
-.hints {
-  display: flex;
-  gap: 8px;
-  padding: 6px 16px;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-}
-
+/* The link whispers from the corner in the board's unlit grey; amber is
+   reserved for what typing lights up. */
 .link {
   margin-left: auto;
   padding: 0;
   border: none;
   background: none;
-  color: var(--match);
+  color: var(--muted);
   font: inherit;
   cursor: pointer;
   text-decoration: underline;
+  text-decoration-color: rgba(141, 128, 112, 0.45);
+}
+
+.link:hover {
+  color: var(--amber);
 }
 
 .notice .link {
   margin: 0;
-  font-size: inherit;
+  color: var(--amber);
+  text-decoration-color: rgba(255, 190, 92, 0.4);
+}
+
+.link:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 2px;
 }
 `;
 
@@ -246,10 +261,9 @@ dialog.hud li.selected::after {
 
   let shortcuts = []; // every shortcut, sorted by key — all of them stay rendered
   let rows = []; // row elements parallel to shortcuts
+  let rowCaps = []; // per-row keycap elements, parallel to shortcuts
   let hits = []; // indices matching the current buffer
-  let selected = -1; // index into shortcuts, or -1
-  let theme = "neon";
-  let ui = null; // { host, dialog, input, count, list } while open
+  let ui = null; // { host, dialog, input, head, prompt, echo, list } while open
 
   if (IN_PAGE) {
     globalThis.__shortcutsToggle = () => (ui ? ui.dialog.close() : open());
@@ -261,13 +275,8 @@ dialog.hud li.selected::after {
   async function open() {
     ui = build();
     try {
-      const [local, synced] = await Promise.all([
-        api.storage.local.get("theme"),
-        api.storage.sync.get("shortcuts"),
-      ]);
+      const synced = await api.storage.sync.get("shortcuts");
       if (!ui) return; // closed before the data arrived
-      theme = THEMES.includes(local.theme) ? local.theme : "neon";
-      applyTheme();
       shortcuts = (synced.shortcuts ?? []).map(decorate).sort((a, b) => a.key.localeCompare(b.key));
       render();
     } catch (err) {
@@ -296,22 +305,18 @@ dialog.hud li.selected::after {
     const head = el("div", "head");
     const input = document.createElement("input");
     input.type = "text";
-    input.placeholder = "key…";
+    input.className = "buf";
     input.autocomplete = "off";
-    input.setAttribute("role", "combobox");
-    input.setAttribute("aria-expanded", "true");
-    input.setAttribute("aria-controls", "results");
     input.setAttribute("aria-label", "Shortcut key");
-    const count = el("span", "count");
-    head.append(input, count);
+    const prompt = el("span", "prompt");
+    prompt.append("type a key", settingsLink("⌃O settings"));
+    const echo = el("span", "echo");
+    echo.setAttribute("aria-hidden", "true");
+    head.append(input, prompt, echo);
 
     const list = document.createElement("ul");
-    list.id = "results";
-    list.setAttribute("role", "listbox");
 
-    const hints = el("div", "hints");
-    hints.append("↵ open · ⌃N ⌃P move · ⌃T theme · esc close", settingsLink("⌃O settings"));
-    dialog.append(head, list, hints);
+    dialog.append(head, list);
 
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(CSS);
@@ -331,6 +336,10 @@ dialog.hud li.selected::after {
 
     dialog.addEventListener("keydown", onKeydown);
     input.addEventListener("input", onInput);
+    // The input is invisible, so a stray click must not be able to unfocus it.
+    dialog.addEventListener("mousedown", (e) => {
+      if (e.target !== input) e.preventDefault();
+    });
     dialog.addEventListener("close", () => {
       ui = null;
       if (IN_PAGE) host.remove();
@@ -349,7 +358,7 @@ dialog.hud li.selected::after {
 
     dialog.showModal();
     input.focus();
-    return { host, dialog, input, count, list };
+    return { host, dialog, input, head, prompt, echo, list };
   }
 
   // Keys are normalized ASCII, so anything else — IME composition included —
@@ -365,125 +374,77 @@ dialog.hud li.selected::after {
     shortcuts.forEach((s, i) => {
       const hit = s.key.startsWith(buf);
       rows[i].classList.toggle("dim", !hit);
+      rowCaps[i].forEach((cap, j) => cap.classList.toggle("lit", hit && j < buf.length));
       if (hit) hits.push(i);
     });
-    ui.count.textContent = buf ? `${hits.length}/${shortcuts.length}` : String(shortcuts.length);
-    select(hits.length ? hits[0] : -1);
-    // Settings keeps the key set prefix-free, so a full match is the only hit
-    // and can fire without waiting. The count check is what keeps a store that
-    // violates that rule reachable through Enter instead of trapping it.
-    if (hits.length === 1 && shortcuts[hits[0]].key === buf) fire(shortcuts[hits[0]]);
+    echoRender(buf, buf.length > 0 && hits.length === 0);
+    // Settings keeps the key set prefix-free, so firing on an exact match is
+    // firing on the only reachable meaning of the buffer. In a hand-edited
+    // store that violates the rule, the shorter key wins — same as SK2U.
+    const exact = shortcuts.find((s) => s.key === buf);
+    if (exact) fire(exact);
+  }
+
+  // The header shows what was pressed, as pressed caps — red when it matches
+  // nothing, which is also the only state that needs Escape to clear.
+  function echoRender(buf, miss) {
+    ui.head.classList.toggle("typing", buf.length > 0);
+    ui.echo.replaceChildren(
+      ...[...buf].map((ch) => {
+        const cap = el("span", miss ? "cap lit miss" : "cap lit");
+        cap.textContent = ch;
+        return cap;
+      }),
+    );
   }
 
   function onKeydown(e) {
     e.stopPropagation(); // keep the page's own shortcuts out of the overlay
-    if (e.ctrlKey && (e.key === "n" || e.key === "p")) {
-      e.preventDefault();
-      move(e.key === "n" ? 1 : -1);
-      return;
-    }
-    if (e.ctrlKey && e.key === "t") {
-      e.preventDefault();
-      cycleTheme();
-      return;
-    }
     if (e.ctrlKey && e.key === "o") {
       e.preventDefault();
       openSettings();
       return;
     }
-    switch (e.key) {
-      // A row apart on screen is COLUMNS apart in the list. Left/Right are
-      // left to the caret — the buffer is still an editable text field.
-      case "ArrowDown":
-        e.preventDefault();
-        move(COLUMNS);
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        move(-COLUMNS);
-        break;
-      case "Enter":
-        e.preventDefault();
-        if (selected >= 0) fire(shortcuts[selected]);
-        break;
-      case "Escape":
-        // With a buffer, Escape only clears it; preventDefault stops the
-        // dialog's native close request. An empty buffer lets it through.
-        if (ui.input.value) {
-          e.preventDefault();
-          ui.input.value = "";
-          narrow("");
-        }
-        break;
+    // With a buffer, Escape only clears it; preventDefault stops the dialog's
+    // native close request. An empty buffer lets it through.
+    if (e.key === "Escape" && ui.input.value) {
+      e.preventDefault();
+      ui.input.value = "";
+      narrow("");
     }
   }
 
-  function cycleTheme() {
-    theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
-    api.storage.local.set({ theme });
-    applyTheme();
-  }
-
-  function applyTheme() {
-    ui.dialog.classList.toggle("hud", theme === "hud");
-  }
-
   function render() {
-    const { list, count } = ui;
+    const { list } = ui;
     rows = [];
+    rowCaps = [];
     list.replaceChildren();
     if (!shortcuts.length) {
       const empty = notice("No shortcuts yet — add one in ");
       empty.append(settingsLink("settings"));
       list.append(empty);
-      count.textContent = "";
       return;
     }
     shortcuts.forEach((entry, i) => {
       const li = document.createElement("li");
-      li.id = `row-${i}`;
-      li.setAttribute("role", "option");
-      li.setAttribute("aria-selected", "false");
       // A cell has no room for the host, so it moves to the hover text.
       li.title = entry.host ? `${entry.title} — ${entry.host}` : entry.title;
-      const key = el("span", "key");
-      key.textContent = entry.key;
+      const keys = el("span", "keys");
+      const caps = [...entry.key].map((ch) => {
+        const cap = el("span", "cap");
+        cap.textContent = ch;
+        keys.append(cap);
+        return cap;
+      });
       const title = el("span", "title");
       title.textContent = entry.title;
-      li.append(key, title);
+      li.append(keys, title);
       li.addEventListener("click", () => fire(entry));
       rows.push(li);
+      rowCaps.push(caps);
       list.append(li);
     });
     narrow("");
-  }
-
-  // Moves within the matching rows, so a dimmed one is never landed on.
-  // A step past either end clamps to it, so a row step from the last, partly
-  // filled row still moves rather than doing nothing.
-  function move(step) {
-    if (!hits.length) return;
-    const at = hits.indexOf(selected);
-    if (at === -1) return select(hits[step > 0 ? 0 : hits.length - 1]);
-    const next = Math.min(Math.max(at + step, 0), hits.length - 1);
-    if (next !== at) select(hits[next]);
-  }
-
-  function select(i) {
-    if (selected >= 0 && rows[selected]) {
-      rows[selected].classList.remove("selected");
-      rows[selected].setAttribute("aria-selected", "false");
-    }
-    selected = i;
-    if (i < 0 || !rows[i]) {
-      ui.input.removeAttribute("aria-activedescendant");
-      return;
-    }
-    rows[i].classList.add("selected");
-    rows[i].setAttribute("aria-selected", "true");
-    ui.input.setAttribute("aria-activedescendant", rows[i].id);
-    rows[i].scrollIntoView({ block: "nearest" });
   }
 
   // Open in the background so the overlay's death can't cut the work short.

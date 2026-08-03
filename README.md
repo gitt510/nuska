@@ -43,7 +43,8 @@ host permission is involved.
 `Ctrl+,` lists your key-to-URL shortcuts. Type a key and it opens the moment
 the key is complete, so the usual path is `Ctrl+,` then `gh`. A partial key
 dims what no longer matches instead of removing it, so the whole set stays on
-screen the entire time; `⌃N` / `⌃P` and `↵` work when the key is forgotten.
+screen the entire time; a row can also be clicked. There is no selection to
+move or confirm — the key is the selection.
 
 Settings is the only place shortcuts are edited — key, title, URL, one row
 each, saved to browser sync storage as you type. Three ways in: `⌃O` in the
@@ -66,8 +67,9 @@ overlay, right-click the toolbar icon → **Shortcuts settings**, or
 
 ### Themes
 
-`Ctrl+T` inside either overlay toggles the theme (neon / hud). Saved per
-browser, shared by the launcher, the shortcuts overlay and settings.
+`Ctrl+T` inside the launcher toggles the theme (neon / hud). Saved per
+browser, shared by the launcher and settings. The shortcuts overlay keeps its
+own single look — backlit keycaps on a dark board.
 
 ### Hot reload
 
