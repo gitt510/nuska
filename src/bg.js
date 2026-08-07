@@ -72,10 +72,24 @@ async function setupMenus() {
     title: "Shortcuts settings",
     contexts: ["action"],
   });
+  api.contextMenus.create({
+    id: "add-to-shortcuts",
+    title: "Add to shortcuts",
+    contexts: ["page"],
+  });
 }
 
-api.contextMenus.onClicked.addListener((info) => {
+api.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "shortcuts-settings") api.runtime.openOptionsPage();
+  if (info.menuItemId === "add-to-shortcuts") {
+    // openOptionsPage takes no arguments, so the page's data travels through
+    // session storage; the settings page consumes it on load and via onChanged
+    // (an already-open options tab is focused, not reloaded).
+    await api.storage.session.set({
+      pendingShortcut: { title: tab?.title ?? "", url: info.pageUrl ?? tab?.url ?? "" },
+    });
+    api.runtime.openOptionsPage();
+  }
 });
 
 async function openOverlay(name, tab) {

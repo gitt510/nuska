@@ -33,6 +33,13 @@
     if (!draft.length) draft.push(blank());
     render();
     showBinding();
+    // "Add to shortcuts" in the page context menu stashes the page here (see
+    // bg.js). The onChanged listener covers the case where this tab was
+    // already open and only got focused.
+    await consumePending();
+    api.storage.session.onChanged.addListener((changes) => {
+      if (changes.pendingShortcut?.newValue) consumePending();
+    });
     ui.add.addEventListener("click", () => {
       draft.push(blank());
       render();
@@ -94,6 +101,18 @@
 
   function blank() {
     return { key: "", title: "", url: "" };
+  }
+
+  // Appends a row prefilled with the stashed page and puts the cursor on its
+  // key field — the key is the one thing a right-click cannot supply.
+  async function consumePending() {
+    const { pendingShortcut } = await api.storage.session.get("pendingShortcut");
+    if (!pendingShortcut?.url) return;
+    await api.storage.session.remove("pendingShortcut");
+    if (draft.length === 1 && !draft[0].key && !draft[0].title && !draft[0].url) draft.length = 0;
+    draft.push({ key: "", title: pendingShortcut.title ?? "", url: pendingShortcut.url });
+    render();
+    ui.rows.lastElementChild?.querySelector("input.key")?.focus();
   }
 
   // "github.com" is what people type; only a scheme already present is taken
