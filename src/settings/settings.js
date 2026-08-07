@@ -13,7 +13,7 @@
     rows: document.getElementById("rows"),
     add: document.getElementById("add"),
     status: document.getElementById("status"),
-    binding: document.getElementById("binding"),
+    bindings: document.getElementById("bindings"),
     importText: document.getElementById("import-text"),
     importRun: document.getElementById("import-run"),
   };
@@ -32,7 +32,7 @@
     }));
     if (!draft.length) draft.push(blank());
     render();
-    showBinding();
+    renderBindings();
     // "Add to shortcuts" in the page context menu stashes the page here (see
     // bg.js). The onChanged listener covers the case where this tab was
     // already open and only got focused.
@@ -283,26 +283,104 @@
     ui.status.classList.toggle("error", isError);
   }
 
-  // A suggested_key is only applied at install time, and the browser, the OS or
-  // another extension may already own it — so report what is actually bound.
-  async function showBinding() {
-    const where = navigator.userAgent.includes("Firefox")
-      ? "about:addons → gear → Manage Extension Shortcuts"
-      : "chrome://extensions/shortcuts";
-    let bound = "";
+  // The browser owns command shortcuts; edits go through commands.update,
+  // which Firefox has and Chrome does not (chrome://extensions/shortcuts is
+  // the only writer there) — hence the feature test and the static fallback.
+  const COMMANDS = [
+    { name: "_execute_action", label: "Launcher" },
+    { name: "open-shortcuts", label: "Shortcuts" },
+  ];
+
+  async function renderBindings() {
+    let bound;
     try {
-      const all = await api.commands.getAll();
-      bound = all.find((c) => c.name === "open-shortcuts")?.shortcut ?? "";
+      bound = new Map((await api.commands.getAll()).map((c) => [c.name, c.shortcut ?? ""]));
     } catch {
-      // commands.getAll is unavailable on this build — fall through to the hint
+      return; // commands.getAll is unavailable on this build — show nothing
     }
-    ui.binding.replaceChildren();
-    if (bound) {
-      const kbd = document.createElement("kbd");
-      kbd.textContent = bound;
-      ui.binding.append("Press ", kbd, ` to open the overlay. Rebind at ${where}.`);
-    } else {
-      ui.binding.append(`No key is bound — assign "Open shortcuts" at ${where}.`);
+    ui.bindings.replaceChildren();
+    if (typeof api.commands.update !== "function") {
+      ui.bindings.textContent = "Rebind keys at chrome://extensions/shortcuts.";
+      return;
     }
+    for (const { name, label } of COMMANDS) {
+      const wrap = document.createElement("span");
+      wrap.className = "binding";
+      const lab = document.createElement("label");
+      lab.textContent = label;
+      wrap.append(lab, bindingField(name, bound.get(name) ?? ""));
+      ui.bindings.append(wrap);
+    }
+  }
+
+  function bindingField(name, current) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.readOnly = true; // keys are captured, never typed as text
+    input.value = current;
+    input.placeholder = "press keys";
+    input.setAttribute("aria-label", `${name} shortcut`);
+    input.addEventListener("keydown", async (e) => {
+      e.preventDefault();
+      if (e.key === "Escape") {
+        input.blur();
+        return;
+      }
+      if (e.key === "Backspace") {
+        await rebind(name, "", input);
+        return;
+      }
+      const combo = comboFrom(e);
+      if (combo) await rebind(name, combo, input);
+    });
+    return input;
+  }
+
+  async function rebind(name, shortcut, input) {
+    try {
+      await api.commands.update({ name, shortcut });
+      input.value = shortcut;
+      setStatus(shortcut ? `${name} → ${shortcut}` : `${name} unbound`);
+    } catch (err) {
+      setStatus(`not rebound: ${err.message ?? err}`, true);
+    }
+  }
+
+  // Builds a manifest-syntax shortcut ("MacCtrl+Comma") from a keydown, or
+  // null while the combination is still incomplete. Commands demand exactly
+  // one primary modifier (Shift only rides along); function keys stand alone.
+  function comboFrom(e) {
+    const isMac = navigator.platform.includes("Mac");
+    const mods = [];
+    if (e.metaKey && isMac) mods.push("Command");
+    if (e.ctrlKey) mods.push(isMac ? "MacCtrl" : "Ctrl");
+    if (e.altKey) mods.push("Alt");
+    const key = keyFrom(e.code);
+    if (!key) return null;
+    if (/^F([1-9]|1[0-2])$/.test(key)) return [...mods, ...(e.shiftKey ? ["Shift"] : []), key].join("+");
+    if (mods.length !== 1) return null;
+    return [mods[0], ...(e.shiftKey ? ["Shift"] : []), key].join("+");
+  }
+
+  function keyFrom(code) {
+    if (/^Key[A-Z]$/.test(code)) return code.slice(3);
+    if (/^Digit[0-9]$/.test(code)) return code.slice(5);
+    if (/^F([1-9]|1[0-2])$/.test(code)) return code;
+    const named = {
+      Comma: "Comma",
+      Period: "Period",
+      Space: "Space",
+      Home: "Home",
+      End: "End",
+      PageUp: "PageUp",
+      PageDown: "PageDown",
+      Insert: "Insert",
+      Delete: "Delete",
+      ArrowUp: "Up",
+      ArrowDown: "Down",
+      ArrowLeft: "Left",
+      ArrowRight: "Right",
+    };
+    return named[code] ?? null;
   }
 })();

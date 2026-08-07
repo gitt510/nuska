@@ -52,13 +52,25 @@
         margin: 24px 0 0;
       }
 
-      kbd {
-        padding: 1px 5px;
-        border: 1px solid var(--hot);
-        border-radius: 4px;
-        color: var(--fg);
+      .bindings {
+        display: flex;
+        gap: 24px;
+        margin: 0 0 24px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .binding {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .binding input {
+        width: 150px;
         font-family: var(--mono);
-        font-size: 11px;
+        font-size: 12px;
+        text-align: center;
       }
 
       table {
@@ -222,7 +234,11 @@
   </head>
   <body>
     <h1>Shortcuts</h1>
-    <p class="lede" id="binding"></p>
+    <p class="lede">
+      Click a binding and press the new key combination. Backspace unbinds,
+      Escape leaves it as it was.
+    </p>
+    <div class="bindings" id="bindings"></div>
 
     <table>
       <thead>
