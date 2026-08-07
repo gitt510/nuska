@@ -46,14 +46,14 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // (chrome://, the Web Store, …). Both are reached by keyboard, which is what
 // grants activeTab — no host permission is involved.
 const OVERLAYS = {
-  launcher: { file: "launcher/launcher.js", page: "launcher/launcher.html", w: 680, h: 480 },
+  bookmarks: { file: "bookmarks/bookmarks.js", page: "bookmarks/bookmarks.html", w: 680, h: 480 },
   shortcuts: { file: "shortcuts/shortcuts.js", page: "shortcuts/shortcuts.html", w: 680, h: 400 },
 };
 
-// Ctrl+B (_execute_action) and the toolbar icon open the launcher; Ctrl+,
+// Ctrl+B (_execute_action) and the toolbar icon open the bookmarks; Ctrl+,
 // opens the shortcuts overlay. _execute_action never fires onCommand, so both
 // listeners are needed.
-api.action.onClicked.addListener((tab) => openOverlay("launcher", tab));
+api.action.onClicked.addListener((tab) => openOverlay("bookmarks", tab));
 
 api.commands.onCommand.addListener((command, tab) => {
   if (command === "open-shortcuts") openOverlay("shortcuts", tab);

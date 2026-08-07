@@ -1,6 +1,6 @@
 # wip-extension-cf
 
-Keyboard launcher extension for Chrome and Firefox (working title).
+Keyboard-driven bookmarks extension for Chrome and Firefox (working title).
 
 ## Development flow
 
@@ -32,7 +32,7 @@ Firefox (permanent install — Firefox only accepts signed extensions):
 
 ### How it opens
 
-`Ctrl+B` injects the launcher as a centered modal over the current page
+`Ctrl+B` injects the bookmarks overlay as a centered modal over the current page
 (top layer, above any page z-index). `Ctrl+,` opens the shortcuts overlay the
 same way. Pages that refuse injection (`chrome://`, the Web Store) get a
 centered popup window with the same UI.
@@ -69,7 +69,7 @@ overlay, right-click the toolbar icon → **Shortcuts settings**, or
 
 ### Themes
 
-`Ctrl+T` inside the launcher toggles the launcher theme (neon / hud), saved
+`Ctrl+T` inside the bookmarks overlay toggles its theme (neon / hud), saved
 per browser. The shortcuts overlay and settings are monochrome — brightness
 is the only signal, full white is the alarm.
 

@@ -27,7 +27,7 @@
     ]
   },
   "action": {
-    "default_title": "Launcher",
+    "default_title": "Bookmarks",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png"
@@ -43,7 +43,7 @@
         "default": "Ctrl+B",
         "mac": "MacCtrl+B"
       },
-      "description": "Open the launcher"
+      "description": "Open bookmarks"
     },
     "open-shortcuts": {
       "suggested_key": {

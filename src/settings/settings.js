@@ -287,7 +287,7 @@
   // which Firefox has and Chrome does not (chrome://extensions/shortcuts is
   // the only writer there) — hence the feature test and the static fallback.
   const COMMANDS = [
-    { name: "_execute_action", label: "Launcher" },
+    { name: "_execute_action", label: "Bookmarks" },
     { name: "open-shortcuts", label: "Shortcuts" },
   ];
 

@@ -1,15 +1,15 @@
-// Launcher UI. One file, two contexts:
+// Bookmarks UI. One file, two contexts:
 //  - injected into the page as a content script (bg.js, on Ctrl+B): renders
 //    a centered <dialog> inside a shadow root, on the page's top layer
-//  - loaded by launcher.html inside a centered popup window: the fallback
+//  - loaded by bookmarks.html inside a centered popup window: the fallback
 //    for pages that refuse injection (chrome://, the Web Store, …)
 (() => {
   const api = globalThis.browser ?? globalThis.chrome;
   const IN_PAGE = !api.bookmarks; // content scripts have no bookmarks API
 
-  // Re-injecting the file toggles the already-open launcher instead.
-  if (IN_PAGE && globalThis.__launcherToggle) {
-    globalThis.__launcherToggle();
+  // Re-injecting the file toggles the already-open bookmarks instead.
+  if (IN_PAGE && globalThis.__bookmarksToggle) {
+    globalThis.__bookmarksToggle();
     return;
   }
 
@@ -242,7 +242,7 @@ dialog.hud li.selected::after {
   let ui = null; // { host, dialog, input, count, list } while open
 
   if (IN_PAGE) {
-    globalThis.__launcherToggle = () => (ui ? ui.dialog.close() : open());
+    globalThis.__bookmarksToggle = () => (ui ? ui.dialog.close() : open());
   } else {
     window.addEventListener("blur", () => window.close());
   }
@@ -263,7 +263,7 @@ dialog.hud li.selected::after {
   function build() {
     const dialog = document.createElement("dialog");
     dialog.setAttribute("closedby", "any");
-    dialog.setAttribute("aria-label", "Bookmark launcher");
+    dialog.setAttribute("aria-label", "Bookmarks");
 
     const head = el("div", "head");
     const input = document.createElement("input");
@@ -324,7 +324,7 @@ dialog.hud li.selected::after {
   }
 
   function onKeydown(e) {
-    e.stopPropagation(); // keep the page's own shortcuts out of the launcher
+    e.stopPropagation(); // keep the page's own shortcuts out of the overlay
     if (e.ctrlKey && (e.key === "n" || e.key === "p")) {
       e.preventDefault();
       move(e.key === "n" ? 1 : -1);
@@ -572,7 +572,7 @@ dialog.hud li.selected::after {
     return span;
   }
 
-  // Open in the background so the launcher's death can't cut the work short.
+  // Open in the background so the overlay's death can't cut the work short.
   function openEntry(entry) {
     api.runtime.sendMessage({ type: "open-url", url: entry.url, windowId: originWindowId });
     ui.dialog.close();
