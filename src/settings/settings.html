@@ -6,7 +6,8 @@
     <title>Shortcuts — settings</title>
     <style>
       /* Monochrome, shared with the overlay by copy (see shortcuts/shortcuts.js):
-         brightness is the only signal, full white is the alarm. */
+         brightness is the only signal, full white is the alarm. The one colour
+         on the page is the delete cross — red, because it destroys. */
       :root {
         --bg: #161616;
         --fg: #f0f0f0;
@@ -14,6 +15,8 @@
         --field-bg: rgba(255, 255, 255, 0.03);
         --border: #2b2b2b;
         --hot: #6b6b6b;
+        --danger: #c4564f;
+        --danger-bright: #e06c65;
         --font: system-ui, sans-serif;
         --mono: ui-monospace, "SF Mono", Menlo, monospace;
       }
@@ -36,26 +39,30 @@
       }
 
       h1 {
-        margin: 0 0 4px;
+        margin: 0;
         font-size: 20px;
         font-weight: 600;
       }
 
-      .lede,
-      .note {
-        margin: 0 0 24px;
-        color: var(--muted);
-        font-size: 12px;
+      section {
+        margin-top: 44px;
       }
 
-      .note {
-        margin: 24px 0 0;
+      h2 {
+        margin: 0 0 14px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .lede {
+        margin: 0 0 16px;
+        color: var(--muted);
+        font-size: 12px;
       }
 
       .bindings {
         display: flex;
         gap: 24px;
-        margin: 0 0 24px;
         color: var(--muted);
         font-size: 12px;
       }
@@ -106,23 +113,35 @@
       }
 
       td {
-        padding: 3px 4px;
+        padding: 6px 4px;
         vertical-align: top;
+        /* With the field borders gone, a single hairline per row is all the
+           structure the table shows. */
+        border-bottom: 1px solid var(--border);
       }
 
+      /* Fields read as plain text until pointed at — the page is a list first
+         and a form second. The border/background only surface on hover and
+         focus, and .bad keeps its border regardless (it must never hide). */
       input {
         width: 100%;
         padding: 8px 10px;
-        border: 1px solid var(--border);
+        border: 1px solid transparent;
         border-radius: 6px;
-        background: var(--field-bg);
+        background: none;
         color: var(--fg);
         font: inherit;
         font-size: 13px;
       }
 
+      input:hover {
+        border-color: var(--border);
+        background: var(--field-bg);
+      }
+
       input:focus {
         border-color: var(--hot);
+        background: var(--field-bg);
         outline: none;
       }
 
@@ -171,8 +190,16 @@
       .del {
         width: 30px;
         height: 34px;
+        border-color: transparent;
+        color: var(--danger);
         font-size: 15px;
         line-height: 1;
+      }
+
+      .del:hover {
+        border-color: transparent;
+        background: rgba(224, 108, 101, 0.1);
+        color: var(--danger-bright);
       }
 
       .bar {
@@ -197,21 +224,9 @@
         font-weight: 600;
       }
 
-      details {
-        margin-top: 32px;
-        padding-top: 20px;
-        border-top: 1px solid var(--border);
-      }
-
-      summary {
-        color: var(--muted);
-        cursor: pointer;
-        font-size: 12px;
-      }
-
       textarea {
         width: 100%;
-        margin-bottom: 8px;
+        margin: 0 0 8px;
         padding: 10px;
         border: 1px solid var(--border);
         border-radius: 6px;
@@ -233,45 +248,37 @@
     </style>
   </head>
   <body>
-    <h1>Shortcuts</h1>
-    <p class="lede">
-      Click a binding and press the new key combination. Backspace unbinds,
-      Escape leaves it as it was.
-    </p>
-    <div class="bindings" id="bindings"></div>
+    <h1>Settings</h1>
 
-    <table>
-      <thead>
-        <tr>
-          <th class="key-col">Key</th>
-          <th class="title-col">Title</th>
-          <th>URL</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
+    <section>
+      <h2>Prefix</h2>
+      <p class="lede">Click a binding and press keys — Backspace unbinds.</p>
+      <div class="bindings" id="bindings"></div>
+    </section>
 
-    <div class="bar">
-      <button id="add" type="button">Add shortcut</button>
-      <span id="status"></span>
-    </div>
+    <section>
+      <h2>Shortcuts</h2>
+      <table>
+        <thead>
+          <tr>
+            <th class="key-col">Key</th>
+            <th class="title-col">Title</th>
+            <th>URL</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
 
-    <p class="note">
-      Keys are lowercase letters and digits. No key may be the start of another
-      one — that is what lets a completed key fire the moment it is typed.
-      Rows with an error are kept on screen but left out of the saved set.
-      A URL without a scheme gets <code>https://</code> put in front of it.
-      Saved to browser sync storage.
-    </p>
+      <div class="bar">
+        <button id="add" type="button">Add shortcut</button>
+        <span id="status"></span>
+      </div>
+    </section>
 
-    <details>
-      <summary>Import</summary>
-      <p class="note">
-        Paste a list of shortcuts — this page's own format, or a
-        ShortcutKey2URL export. Keys are lowercased, a key that already exists
-        is replaced, and entries without a URL are skipped.
-      </p>
+    <section>
+      <h2>Import</h2>
+      <p class="lede">JSON, or a ShortcutKey2URL export.</p>
       <textarea
         id="import-text"
         rows="8"
@@ -279,7 +286,7 @@
         placeholder='[{"key": "ex", "title": "Example", "url": "https://example.com"}]'
       ></textarea>
       <button id="import-run" type="button">Import</button>
-    </details>
+    </section>
 
     <script src="settings.js"></script>
   </body>

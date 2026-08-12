@@ -18,18 +18,20 @@
     importRun: document.getElementById("import-run"),
   };
 
-  let draft = []; // { key, title, url } in edit order — the overlay sorts
+  let draft = []; // { key, title, url } — key order on load, edit order after
   let saveTimer = null;
 
   start();
 
   async function start() {
     const synced = await api.storage.sync.get("shortcuts");
-    draft = (synced.shortcuts ?? []).map((s) => ({
-      key: s.key ?? "",
-      title: s.title ?? "",
-      url: s.url ?? "",
-    }));
+    draft = (synced.shortcuts ?? [])
+      .map((s) => ({
+        key: s.key ?? "",
+        title: s.title ?? "",
+        url: s.url ?? "",
+      }))
+      .sort((a, b) => a.key.localeCompare(b.key));
     if (!draft.length) draft.push(blank());
     render();
     renderBindings();
