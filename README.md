@@ -1,6 +1,7 @@
-# wip-extension-cf
+# Shukuchi
 
-Keyboard-driven bookmarks extension for Chrome and Firefox (working title).
+Keyboard-driven bookmarks extension for Chrome and Firefox. Named after
+縮地 — the art of shrinking the ground to arrive in one step.
 
 ## Development flow
 
@@ -92,4 +93,4 @@ browser about 1s later — no manual ⟳.
 
 ## Credits
 
-Toolbar/app icon: `map` from [PrimeIcons](https://github.com/primefaces/primeicons) (MIT).
+Toolbar/app icon: original — two points joined by a folded path (縮地).
