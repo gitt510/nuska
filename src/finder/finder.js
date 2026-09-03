@@ -66,7 +66,7 @@
     dialog.setAttribute("closedby", "any");
     dialog.setAttribute("aria-label", source.kind);
 
-    const head = el("div", "head");
+    const head = el("div", "head divider");
     const input = document.createElement("input");
     input.type = "text";
     input.className = "search p";
@@ -239,7 +239,7 @@
     rows = [];
     list.replaceChildren();
     entries.forEach((entry, i) => {
-      const li = document.createElement("li");
+      const li = el("li", "row");
       li.id = `row-${i}`;
       li.setAttribute("role", "option");
       li.setAttribute("aria-selected", "false");

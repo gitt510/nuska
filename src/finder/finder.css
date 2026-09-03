@@ -13,15 +13,11 @@ dialog.windowed {
   width: 100%;
   min-height: 100vh;
   margin: 0;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
 }
 
 .head {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--border);
 }
 
 .search {
@@ -31,7 +27,6 @@ dialog.windowed {
 
 .count {
   padding-right: 16px;
-  font-variant-numeric: tabular-nums;
 }
 
 ul {
@@ -54,8 +49,6 @@ li {
   column-gap: 8px;
   margin: 0 6px;
   padding: 7px 16px;
-  border-radius: var(--radius);
-  cursor: pointer;
 }
 
 li .title,
@@ -65,13 +58,6 @@ li .meta {
   white-space: nowrap;
 }
 
-li.selected {
-  background: var(--muted);
-  outline: 1px solid var(--ring);
-  outline-offset: -1px;
-}
-
 .notice {
   padding: 16px;
-  cursor: default;
 }

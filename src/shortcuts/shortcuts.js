@@ -77,10 +77,12 @@
     dialog.setAttribute("closedby", "any");
     dialog.setAttribute("aria-label", "Shortcuts");
 
-    const head = el("div", "head");
+    const head = el("div", "head divider");
     const input = document.createElement("input");
     input.type = "text";
-    input.className = "buf";
+    // The buffer lives in a real input for free text editing (Backspace, IME
+    // rejection), but the echo chip is the display — the field itself is hidden.
+    input.className = "visually-hidden";
     input.autocomplete = "off";
     input.setAttribute("aria-label", "Shortcut key");
     const prompt = el("span", "prompt muted");
@@ -205,7 +207,7 @@
       return;
     }
     shortcuts.forEach((entry, i) => {
-      const li = document.createElement("li");
+      const li = el("li", "row");
       // A cell has no room for the host, so it moves to the hover text.
       li.title = entry.host ? `${entry.title} — ${entry.host}` : entry.title;
       const chip = el("span", "inlineCode");

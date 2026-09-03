@@ -37,7 +37,7 @@ button {
 .lead { margin: 0; font-size: 20px; font-weight: 400; line-height: 1.6; color: var(--muted-foreground); }
 .large { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.5; }
 .small { margin: 0; font-size: 14px; font-weight: 500; line-height: 1; }
-.muted { margin: 0; font-size: 14px; font-weight: 400; line-height: 1.5; color: var(--muted-foreground); }
+.muted { margin: 0; font-size: 14px; font-weight: 400; line-height: 1.5; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
 
 .inlineCode {
   font-family: var(--font-mono);
@@ -131,6 +131,42 @@ button {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(3px);
 }
+.dialog[open] { transition: opacity 130ms ease-out, transform 130ms ease-out; }
+@starting-style {
+  .dialog[open] { opacity: 0; transform: translateY(8px); }
+}
+/* The same dialog filling a popup window: the window is the frame. */
+.dialog.windowed {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.divider { border-bottom: 1px solid var(--border); }
+
+/* A pickable row in a list. Selection is the keyboard answering, so it
+   takes the ring; dimming keeps a row readable while saying "not this". */
+.row {
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: opacity 90ms;
+}
+.row:hover { background: var(--muted); }
+.row.selected {
+  background: var(--muted);
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+}
+.row.dim { opacity: 0.25; }
+.notice { cursor: default; }
+
+/* Present for the keyboard and screen readers, invisible on screen. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
 
 /* --- keyboard response ---------------------------------------------
    The one accent, --ring, marks whatever is answering the keyboard: a
@@ -152,6 +188,15 @@ button {
 }
 .link:hover { color: var(--foreground); }
 .link:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open],
+  .row,
+  .inlineCode,
+  .inlineCode span {
+    transition: none;
+  }
+}
 
 /* A search box that is the whole header of a finder: no frame of its own. */
 .search {

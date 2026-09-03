@@ -9,24 +9,10 @@ dialog {
   overflow: clip;
 }
 
-dialog[open] {
-  transition: opacity 130ms ease-out, transform 130ms ease-out;
-}
-
-@starting-style {
-  dialog[open] {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-
 dialog.windowed {
   width: 100%;
   min-height: 100vh;
   margin: 0;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
 }
 
 .head {
@@ -35,16 +21,6 @@ dialog.windowed {
   gap: 10px;
   min-height: 52px;
   padding: 8px 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-/* The buffer lives in a real input for free text editing (Backspace, IME
-   rejection), but the echo chip is the display — the field itself is hidden. */
-.buf {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
 }
 
 .prompt {
@@ -87,19 +63,6 @@ li {
   align-items: center;
   column-gap: 10px;
   padding: 8px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: opacity 90ms;
-}
-
-li:hover {
-  background: var(--muted);
-}
-
-/* Narrowing never removes a row — an unreachable key stays readable so the
-   whole set is still in view while typing. */
-li.dim {
-  opacity: 0.25;
 }
 
 li .inlineCode {
@@ -117,12 +80,4 @@ li .title {
 .notice {
   grid-column: 1 / -1;
   padding: 16px 8px;
-  cursor: default;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  dialog[open],
-  li {
-    transition: none;
-  }
 }
