@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Shukuchi",
   "version": "0.1.17",
-  "description": "One shortcut opens your bookmarks bar as a tree with fuzzy search, another fires your key-to-URL shortcuts.",
+  "description": "One shortcut opens your bookmarks bar with fuzzy search, one your history, another fires your key-to-URL shortcuts.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -11,6 +11,7 @@
   },
   "permissions": [
     "bookmarks",
+    "history",
     "alarms",
     "storage",
     "activeTab",
@@ -51,6 +52,13 @@
         "mac": "MacCtrl+Comma"
       },
       "description": "Open shortcuts"
+    },
+    "open-history": {
+      "suggested_key": {
+        "default": "Ctrl+Y",
+        "mac": "MacCtrl+Y"
+      },
+      "description": "Open history"
     }
   },
   "browser_specific_settings": {

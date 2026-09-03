@@ -1,0 +1,163 @@
+/* How things look. shadcn/ui typography roles with their verbatim values,
+   plus the resting / hover / focus / error states of controls.
+   This is the only file allowed to set font-size, font-family, font-weight
+   or line-height. The smallest size here is 14px. Layout files position
+   these classes and never restyle them. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Form controls do not inherit font by default. */
+input,
+textarea,
+button {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+/* --- typography roles ------------------------------------------- */
+
+.h1 { margin: 0; font-size: 36px; font-weight: 800; line-height: 1.1; letter-spacing: -0.025em; text-wrap: balance; }
+.h2 { margin: 0; font-size: 30px; font-weight: 600; line-height: 1.2; letter-spacing: -0.025em; padding-bottom: 8px; border-bottom: 1px solid var(--border); text-wrap: balance; }
+.h3 { margin: 0; font-size: 24px; font-weight: 600; line-height: 1.3; letter-spacing: -0.025em; }
+.h4 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.4; letter-spacing: -0.025em; }
+.p { margin: 0; font-size: 16px; font-weight: 400; line-height: 28px; }
+.lead { margin: 0; font-size: 20px; font-weight: 400; line-height: 1.6; color: var(--muted-foreground); }
+.large { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.5; }
+.small { margin: 0; font-size: 14px; font-weight: 500; line-height: 1; }
+.muted { margin: 0; font-size: 14px; font-weight: 400; line-height: 1.5; color: var(--muted-foreground); }
+
+.inlineCode {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 0.2rem 0.3rem;
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--muted);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.table th,
+.table td {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.table th { font-weight: 700; }
+.table td { font-weight: 400; }
+
+/* --- controls and their states ---------------------------------- */
+
+/* A field reads as text until pointed at; .outlined keeps its frame. */
+.field {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+}
+.field:hover { border-color: var(--input); }
+.field:focus-visible { outline: none; border-color: var(--ring); }
+.field.outlined { border-color: var(--input); }
+.field.outlined:focus-visible { border-color: var(--ring); }
+.field.bad,
+.field.bad:hover { border-color: var(--destructive); }
+.field::placeholder { color: var(--muted-foreground); font-weight: 400; opacity: 1; }
+.field.inlineCode { background: none; }
+.field.inlineCode:hover,
+.field.inlineCode:focus-visible { background: var(--muted); }
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--input);
+  border-radius: var(--radius);
+  background: none;
+  resize: vertical;
+}
+.textarea:focus-visible { outline: none; border-color: var(--ring); }
+
+.button {
+  padding: 8px 16px;
+  border: 1px solid var(--input);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--foreground);
+  cursor: pointer;
+  line-height: 20px;
+}
+.button:hover { background: var(--muted); }
+.button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.button.primary { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.button.primary:hover { background: color-mix(in srgb, var(--primary) 90%, transparent); }
+.button.ghost { border-color: transparent; color: var(--muted-foreground); }
+.button.ghost:hover { background: var(--muted); color: var(--foreground); }
+
+.destructive { color: var(--destructive); }
+.button.destructive:hover {
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+
+/* --- surfaces ----------------------------------------------------- */
+
+.dialog {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+/* --- keyboard response ---------------------------------------------
+   The one accent, --ring, marks whatever is answering the keyboard: a
+   focused field, a chip whose key matches the typed prefix, matched
+   characters in a search hit. */
+.inlineCode.hot { outline: 1px solid var(--ring); outline-offset: -1px; color: var(--muted-foreground); }
+.inlineCode.hot .on { color: var(--foreground); }
+.inlineCode.fill { background: var(--foreground); color: var(--background); }
+.match { font-weight: 600; color: var(--ring); }
+
+.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+}
+.link:hover { color: var(--foreground); }
+.link:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* A search box that is the whole header of a finder: no frame of its own. */
+.search {
+  border: none;
+  outline: none;
+  background: none;
+  caret-color: var(--ring);
+}
+.search::placeholder { color: var(--muted-foreground); }

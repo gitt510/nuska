@@ -1,0 +1,128 @@
+/* Where things go in the shortcuts overlay. Type and colour come from
+   design/theme.css roles. Loaded into the shadow root by bg.js, or by
+   shortcuts.html in the fallback window. */
+
+dialog {
+  width: min(720px, 94vw);
+  margin: 16vh auto auto;
+  padding: 0;
+  overflow: clip;
+}
+
+dialog[open] {
+  transition: opacity 130ms ease-out, transform 130ms ease-out;
+}
+
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+dialog.windowed {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* The buffer lives in a real input for free text editing (Backspace, IME
+   rejection), but the echo chip is the display — the field itself is hidden. */
+.buf {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.prompt {
+  flex: 1;
+}
+
+.head.typing .prompt {
+  display: none;
+}
+
+.echo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Alphabetical, read across then down. The point of the grid is that the whole
+   key set is takeable in at a glance, which one tall column never is. */
+ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 2px 8px;
+  margin: 0;
+  padding: 12px;
+  list-style: none;
+  max-height: min(52vh, 440px);
+  overflow-y: auto;
+}
+
+dialog.windowed ul {
+  max-height: calc(100vh - 80px);
+}
+
+/* A fixed key track: chips have to line up down a column, and they cannot if
+   each cell sizes its own. 44px fits a two-character chip. */
+li {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
+  padding: 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: opacity 90ms;
+}
+
+li:hover {
+  background: var(--muted);
+}
+
+/* Narrowing never removes a row — an unreachable key stays readable so the
+   whole set is still in view while typing. */
+li.dim {
+  opacity: 0.25;
+}
+
+li .inlineCode {
+  justify-self: start;
+  min-width: 34px;
+  text-align: center;
+}
+
+li .title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notice {
+  grid-column: 1 / -1;
+  padding: 16px 8px;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog[open],
+  li {
+    transition: none;
+  }
+}

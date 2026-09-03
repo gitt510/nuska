@@ -114,7 +114,7 @@
     if (draft.length === 1 && !draft[0].key && !draft[0].title && !draft[0].url) draft.length = 0;
     draft.push({ key: "", title: pendingShortcut.title ?? "", url: pendingShortcut.url });
     render();
-    ui.rows.lastElementChild?.querySelector("input.key")?.focus();
+    ui.rows.lastElementChild?.querySelector('input[data-name="key"]')?.focus();
   }
 
   // "github.com" is what people type; only a scheme already present is taken
@@ -183,8 +183,8 @@
 
     const del = document.createElement("button");
     del.type = "button";
-    del.className = "del";
-    del.textContent = "×";
+    del.className = "button ghost destructive small";
+    del.textContent = "✕";
     del.title = "Delete";
     del.setAttribute("aria-label", `Delete row ${i + 1}`);
     del.addEventListener("click", () => {
@@ -193,12 +193,13 @@
       render();
       scheduleSave();
     });
-    tr.append(cell(del));
+    tr.append(cell(del, "act"));
     return tr;
   }
 
-  function cell(child) {
+  function cell(child, className = "") {
     const td = document.createElement("td");
+    td.className = className;
     td.append(child);
     return td;
   }
@@ -206,7 +207,9 @@
   function field(name, value, placeholder, i) {
     const input = document.createElement("input");
     input.type = "text";
-    input.className = name;
+    // Keys are code; the role class carries the monospace, not the field.
+    input.className = name === "key" ? "field inlineCode" : "field";
+    input.dataset.name = name;
     input.value = value;
     input.placeholder = placeholder;
     input.spellcheck = false;
@@ -238,15 +241,14 @@
   function validate() {
     const errors = errorsOf(draft);
     [...ui.rows.children].forEach((tr, i) => {
-      // Fields carry their name as their class, so the mark is a name match.
       tr.querySelectorAll("input").forEach((input) =>
-        input.classList.toggle("bad", errors[i]?.field === input.classList[0]),
+        input.classList.toggle("bad", errors[i]?.field === input.dataset.name),
       );
       const urlCell = tr.children[2]; // widest column — the reason fits under it
       urlCell.querySelector(".why")?.remove();
       if (errors[i]) {
         const why = document.createElement("span");
-        why.className = "why";
+        why.className = "why small destructive";
         why.textContent = errors[i].why;
         urlCell.append(why);
       }
@@ -282,7 +284,7 @@
 
   function setStatus(text, isError = false) {
     ui.status.textContent = text;
-    ui.status.classList.toggle("error", isError);
+    ui.status.classList.toggle("destructive", isError);
   }
 
   // The browser owns command shortcuts; edits go through commands.update,
@@ -291,6 +293,7 @@
   const COMMANDS = [
     { name: "_execute_action", label: "Bookmarks" },
     { name: "open-shortcuts", label: "Shortcuts" },
+    { name: "open-history", label: "History" },
   ];
 
   async function renderBindings() {
@@ -302,22 +305,28 @@
     }
     ui.bindings.replaceChildren();
     if (typeof api.commands.update !== "function") {
-      ui.bindings.textContent = "Rebind keys at chrome://extensions/shortcuts.";
+      const note = document.createElement("p");
+      note.className = "muted";
+      note.textContent = "Rebind keys at chrome://extensions/shortcuts.";
+      ui.bindings.append(note);
       return;
     }
+    // Label and field are direct grid children — the layout pairs them by
+    // column, so there is no wrapper per row.
     for (const { name, label } of COMMANDS) {
-      const wrap = document.createElement("span");
-      wrap.className = "binding";
       const lab = document.createElement("label");
+      lab.className = "p";
+      lab.htmlFor = `bind-${name}`;
       lab.textContent = label;
-      wrap.append(lab, bindingField(name, bound.get(name) ?? ""));
-      ui.bindings.append(wrap);
+      ui.bindings.append(lab, bindingField(name, bound.get(name) ?? ""));
     }
   }
 
   function bindingField(name, current) {
     const input = document.createElement("input");
     input.type = "text";
+    input.id = `bind-${name}`;
+    input.className = "field outlined inlineCode";
     input.readOnly = true; // keys are captured, never typed as text
     input.value = current;
     input.placeholder = "press keys";

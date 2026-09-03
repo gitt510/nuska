@@ -1,0 +1,18 @@
+/* Values only. shadcn semantic names on Tailwind zinc, dark, one set.
+   The single accent is --ring: whatever can be edited turns blue on focus.
+   Lines have two colours — --border separates, --input outlines a control. */
+:root {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --border: #3f3f46;
+  --input: #52525b;
+  --ring: #3b82f6;
+  --primary: #fafafa;
+  --primary-foreground: #18181b;
+  --destructive: #f87171;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 6px;
+}

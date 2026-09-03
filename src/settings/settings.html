@@ -1,292 +1,63 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Shortcuts — settings</title>
-    <style>
-      /* Monochrome, shared with the overlay by copy (see shortcuts/shortcuts.js):
-         brightness is the only signal, full white is the alarm. The one colour
-         on the page is the delete cross — red, because it destroys. */
-      :root {
-        --bg: #161616;
-        --fg: #f0f0f0;
-        --muted: #9c9c9c;
-        --field-bg: rgba(255, 255, 255, 0.03);
-        --border: #2b2b2b;
-        --hot: #6b6b6b;
-        --danger: #c4564f;
-        --danger-bright: #e06c65;
-        --font: system-ui, sans-serif;
-        --mono: ui-monospace, "SF Mono", Menlo, monospace;
-      }
-
-      /* Inputs are sized by their column, so padding and border have to sit
-         inside that width rather than adding to it. */
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-      }
-
-      body {
-        max-width: 860px;
-        margin: 0 auto;
-        padding: 40px 24px 80px;
-        background: var(--bg);
-        color: var(--fg);
-        font: 14px/1.5 var(--font);
-      }
-
-      h1 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 600;
-      }
-
-      section {
-        margin-top: 44px;
-      }
-
-      h2 {
-        margin: 0 0 14px;
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .lede {
-        margin: 0 0 16px;
-        color: var(--muted);
-        font-size: 12px;
-      }
-
-      .bindings {
-        display: flex;
-        gap: 24px;
-        color: var(--muted);
-        font-size: 12px;
-      }
-
-      .binding {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .binding input {
-        width: 150px;
-        font-family: var(--mono);
-        font-size: 12px;
-        text-align: center;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        /* The column widths below are the whole layout — without this, an
-           input's own intrinsic width gets a vote and the header stops
-           lining up with the field under it. */
-        table-layout: fixed;
-      }
-
-      th {
-        padding: 0 8px 6px;
-        color: var(--muted);
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-align: left;
-        text-transform: uppercase;
-      }
-
-      th:last-child,
-      td:last-child {
-        width: 32px;
-      }
-
-      th.key-col {
-        width: 90px;
-      }
-
-      th.title-col {
-        width: 28%;
-      }
-
-      td {
-        padding: 6px 4px;
-        vertical-align: top;
-        /* With the field borders gone, a single hairline per row is all the
-           structure the table shows. */
-        border-bottom: 1px solid var(--border);
-      }
-
-      /* Fields read as plain text until pointed at — the page is a list first
-         and a form second. The border/background only surface on hover and
-         focus, and .bad keeps its border regardless (it must never hide). */
-      input {
-        width: 100%;
-        padding: 8px 10px;
-        border: 1px solid transparent;
-        border-radius: 6px;
-        background: none;
-        color: var(--fg);
-        font: inherit;
-        font-size: 13px;
-      }
-
-      input:hover {
-        border-color: var(--border);
-        background: var(--field-bg);
-      }
-
-      input:focus {
-        border-color: var(--hot);
-        background: var(--field-bg);
-        outline: none;
-      }
-
-      input.key {
-        color: var(--fg);
-        font-family: var(--mono);
-        font-weight: 600;
-        letter-spacing: 0.06em;
-      }
-
-      input.bad {
-        border-color: var(--fg);
-      }
-
-      /* A placeholder must never read as a saved value — .key would otherwise
-         render its example in the accent colour, bold, like real data. */
-      ::placeholder {
-        color: var(--muted);
-        font-weight: 400;
-        letter-spacing: normal;
-        opacity: 1;
-      }
-
-      .why {
-        display: block;
-        padding: 3px 4px 0;
-        color: var(--fg);
-        font-size: 11px;
-        font-weight: 600;
-      }
-
-      button {
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: none;
-        color: var(--muted);
-        font: inherit;
-        cursor: pointer;
-      }
-
-      button:hover {
-        border-color: var(--hot);
-        color: var(--fg);
-      }
-
-      .del {
-        width: 30px;
-        height: 34px;
-        border-color: transparent;
-        color: var(--danger);
-        font-size: 15px;
-        line-height: 1;
-      }
-
-      .del:hover {
-        border-color: transparent;
-        background: rgba(224, 108, 101, 0.1);
-        color: var(--danger-bright);
-      }
-
-      .bar {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-top: 16px;
-        padding: 0 4px;
-      }
-
-      #add {
-        padding: 7px 14px;
-      }
-
-      #status {
-        color: var(--muted);
-        font-size: 12px;
-      }
-
-      #status.error {
-        color: var(--fg);
-        font-weight: 600;
-      }
-
-      textarea {
-        width: 100%;
-        margin: 0 0 8px;
-        padding: 10px;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: var(--field-bg);
-        color: var(--fg);
-        font-family: var(--mono);
-        font-size: 12px;
-        resize: vertical;
-      }
-
-      textarea:focus {
-        border-color: var(--hot);
-        outline: none;
-      }
-
-      #import-run {
-        padding: 7px 14px;
-      }
-    </style>
+    <title>Shukuchi — Settings</title>
+    <link rel="stylesheet" href="../design/tokens.css" />
+    <link rel="stylesheet" href="../design/theme.css" />
+    <link rel="stylesheet" href="settings.css" />
   </head>
   <body>
-    <h1>Settings</h1>
+    <main class="page">
+      <section class="section">
+        <h2 class="h2">Prefix</h2>
+        <p class="muted">Click a binding and press keys. Backspace unbinds.</p>
+        <div class="bindings" id="bindings"></div>
+      </section>
 
-    <section>
-      <h2>Prefix</h2>
-      <p class="lede">Click a binding and press keys — Backspace unbinds.</p>
-      <div class="bindings" id="bindings"></div>
-    </section>
+      <section class="section">
+        <h2 class="h2">Shortcuts</h2>
+        <div class="scroller">
+          <table class="table shortcuts">
+            <colgroup>
+              <col class="key" />
+              <col class="title" />
+              <col />
+              <col class="act" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Title</th>
+                <th>URL</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="bar">
+          <button id="add" class="button primary small" type="button">Add shortcut</button>
+          <span id="status" class="muted"></span>
+        </div>
+      </section>
 
-    <section>
-      <h2>Shortcuts</h2>
-      <table>
-        <thead>
-          <tr>
-            <th class="key-col">Key</th>
-            <th class="title-col">Title</th>
-            <th>URL</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-
-      <div class="bar">
-        <button id="add" type="button">Add shortcut</button>
-        <span id="status"></span>
-      </div>
-    </section>
-
-    <section>
-      <h2>Import</h2>
-      <p class="lede">JSON, or a ShortcutKey2URL export.</p>
-      <textarea
-        id="import-text"
-        rows="8"
-        spellcheck="false"
-        placeholder='[{"key": "ex", "title": "Example", "url": "https://example.com"}]'
-      ></textarea>
-      <button id="import-run" type="button">Import</button>
-    </section>
+      <section class="section">
+        <h2 class="h2">Import</h2>
+        <p class="muted">JSON, or a ShortcutKey2URL export.</p>
+        <div class="stack">
+          <textarea
+            id="import-text"
+            class="textarea inlineCode"
+            rows="6"
+            spellcheck="false"
+            placeholder='[{"key": "ex", "title": "Example", "url": "https://example.com"}]'
+          ></textarea>
+          <button id="import-run" class="button primary small" type="button">Import</button>
+        </div>
+      </section>
+    </main>
 
     <script src="settings.js"></script>
   </body>

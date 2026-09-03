@@ -1,0 +1,77 @@
+/* Where things go in the finder overlay (bookmarks, history). Type and
+   colour come from design/theme.css roles. Loaded into the shadow root by
+   bg.js, or by bookmarks.html / history.html in the fallback window. */
+
+dialog {
+  width: min(560px, 92vw);
+  margin: 16vh auto auto;
+  padding: 0;
+  overflow: clip;
+}
+
+dialog.windowed {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.search {
+  flex: 1;
+  padding: 14px 16px;
+}
+
+.count {
+  padding-right: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+ul {
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  max-height: min(52vh, 440px);
+  overflow-y: auto;
+}
+
+dialog.windowed ul {
+  max-height: calc(100vh - 60px);
+}
+
+/* Title takes the room; the host gets up to 45% and ellipsizes after that. */
+li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) fit-content(45%);
+  align-items: center;
+  column-gap: 8px;
+  margin: 0 6px;
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+li .title,
+li .meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+li.selected {
+  background: var(--muted);
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+}
+
+.notice {
+  padding: 16px;
+  cursor: default;
+}

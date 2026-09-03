@@ -19,237 +19,8 @@
     return;
   }
 
-  // Monochrome: brightness is the only signal. Each key is one chip; the
-  // typed prefix lights white while everything unreachable falls to near-
-  // black, and the header echoes the buffer as an inverted chip. The palette
-  // is shared with the settings page by copy (see settings/settings.html).
-  const CSS = `
-dialog {
-  --bg: #161616;
-  --fg: #f0f0f0;
-  --muted: #9c9c9c;
-  --faint: #585858;
-  --line: #2b2b2b;
-  --chip: #3a3a3a;
-  --hot: #6b6b6b;
-  --font: system-ui, sans-serif;
-  --mono: ui-monospace, "SF Mono", Menlo, monospace;
-
-  width: min(640px, 94vw);
-  margin: 16vh auto auto;
-  padding: 0;
-  border: 1px solid #2e2e2e;
-  border-radius: 12px;
-  overflow: clip;
-  background: var(--bg);
-  color: var(--fg);
-  font: 14px/1.45 var(--font);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 24px 80px rgba(0, 0, 0, 0.6);
-}
-
-dialog[open] {
-  transition: opacity 130ms ease-out, transform 130ms ease-out;
-}
-
-@starting-style {
-  dialog[open] {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-
-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(3px);
-}
-
-dialog.windowed {
-  width: 100%;
-  min-height: 100vh;
-  margin: 0;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.head {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 48px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--line);
-}
-
-/* The buffer lives in a real input for free text editing (Backspace, IME
-   rejection), but the echo chip is the display — the field itself is hidden. */
-.buf {
-  width: 1px;
-  height: 1px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  opacity: 0;
-  overflow: hidden;
-}
-
-.prompt {
-  display: flex;
-  flex: 1;
-  color: var(--muted);
-  font-size: 12.5px;
-  letter-spacing: 0.02em;
-}
-
-.head.typing .prompt {
-  display: none;
-}
-
-.echo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.nomatch {
-  color: var(--faint);
-  font-size: 12px;
-}
-
-/* One chip per shortcut — "gp" is a single unit, not two keys. */
-.key {
-  display: inline-flex;
-  justify-content: center;
-  min-width: 24px;
-  padding: 3px 7px;
-  border: 1px solid var(--chip);
-  border-radius: 5px;
-  color: var(--muted);
-  font: 600 12px/1.2 var(--mono);
-  letter-spacing: 0.05em;
-  transition: border-color 70ms;
-}
-
-.key span {
-  transition: color 70ms;
-}
-
-/* the typed prefix lights up inside the chip */
-.key span.on {
-  color: var(--fg);
-}
-
-.key.hot {
-  border-color: var(--hot);
-}
-
-/* the header echo: what was pressed, inverted */
-.key.fill {
-  padding: 4px 9px;
-  border-color: var(--fg);
-  background: var(--fg);
-  color: #111;
-  font-size: 13px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  dialog[open],
-  .key,
-  .key span {
-    transition: none;
-  }
-}
-
-/* Alphabetical, read across then down. The point of the grid is that the whole
-   key set is takeable in at a glance, which one tall column never is. */
-ul {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-content: start;
-  gap: 3px 12px;
-  margin: 0;
-  padding: 12px 14px;
-  list-style: none;
-  max-height: min(52vh, 440px);
-  overflow-y: auto;
-}
-
-dialog.windowed ul {
-  max-height: calc(100vh - 80px);
-}
-
-/* A fixed key track: chips have to line up down a column, and they cannot if
-   each cell sizes its own. 48px fits a two-character chip. */
-li {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
-  align-items: center;
-  column-gap: 10px;
-  padding: 5px 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: opacity 90ms;
-}
-
-li:hover {
-  background: rgba(255, 255, 255, 0.045);
-}
-
-/* Narrowing never removes a row — an unreachable key stays readable so the
-   whole set is still in view while typing. */
-li.dim {
-  opacity: 0.18;
-}
-
-.title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
-}
-
-.notice {
-  grid-column: 1 / -1;
-  display: block;
-  padding: 14px 8px;
-  color: var(--muted);
-  cursor: default;
-}
-
-/* monochrome: full white is the alarm */
-.notice.bad {
-  color: var(--fg);
-}
-
-.link {
-  margin-left: auto;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--muted);
-  font: inherit;
-  cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: rgba(156, 156, 156, 0.45);
-}
-
-.link:hover {
-  color: var(--fg);
-}
-
-.link:focus-visible {
-  outline: 1px solid var(--fg);
-  outline-offset: 2px;
-}
-
-.notice .link {
-  margin: 0;
-  color: var(--fg);
-  text-decoration-color: rgba(240, 240, 240, 0.4);
-}
-`;
+  // Styles come from design/tokens.css + design/theme.css + shortcuts.css.
+  // The page-injected copy has no <link>, so bg.js hands the text over.
 
   // The fallback window must open tabs in the window it was launched from.
   const originWindowId = IN_PAGE
@@ -271,7 +42,12 @@ li.dim {
   open();
 
   async function open() {
-    ui = build();
+    let css = null;
+    if (IN_PAGE) {
+      const res = await api.runtime.sendMessage({ type: "get-css", name: "shortcuts" });
+      css = res?.ok ? res.css : "";
+    }
+    ui = build(css);
     try {
       const synced = await api.storage.sync.get("shortcuts");
       if (!ui) return; // closed before the data arrived
@@ -295,8 +71,9 @@ li.dim {
     return { key: s.key, url: s.url, host, title: s.title || host || s.url };
   }
 
-  function build() {
+  function build(css) {
     const dialog = document.createElement("dialog");
+    dialog.className = "dialog";
     dialog.setAttribute("closedby", "any");
     dialog.setAttribute("aria-label", "Shortcuts");
 
@@ -306,8 +83,8 @@ li.dim {
     input.className = "buf";
     input.autocomplete = "off";
     input.setAttribute("aria-label", "Shortcut key");
-    const prompt = el("span", "prompt");
-    prompt.append("type a key", settingsLink("⌃O settings"));
+    const prompt = el("span", "prompt muted");
+    prompt.textContent = "type a key";
     const echo = el("span", "echo");
     echo.setAttribute("aria-hidden", "true");
     head.append(input, prompt, echo);
@@ -316,18 +93,17 @@ li.dim {
 
     dialog.append(head, list);
 
-    const sheet = new CSSStyleSheet();
-    sheet.replaceSync(CSS);
-
     let host = null;
     if (IN_PAGE) {
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(css);
       host = document.createElement("div");
       const shadow = host.attachShadow({ mode: "closed" });
       shadow.adoptedStyleSheets = [sheet];
       shadow.append(dialog);
       document.documentElement.append(host);
     } else {
-      document.adoptedStyleSheets = [sheet];
+      // shortcuts.html links the same three files
       document.body.append(dialog);
       dialog.classList.add("windowed");
     }
@@ -390,11 +166,11 @@ li.dim {
     ui.head.classList.toggle("typing", buf.length > 0);
     ui.echo.replaceChildren();
     if (!buf) return;
-    const chip = el("span", "key fill");
+    const chip = el("span", "inlineCode fill");
     chip.textContent = buf;
     ui.echo.append(chip);
     if (miss) {
-      const label = el("span", "nomatch");
+      const label = el("span", "muted");
       label.textContent = "no match — esc clears";
       ui.echo.append(label);
     }
@@ -432,14 +208,14 @@ li.dim {
       const li = document.createElement("li");
       // A cell has no room for the host, so it moves to the hover text.
       li.title = entry.host ? `${entry.title} — ${entry.host}` : entry.title;
-      const chip = el("span", "key");
+      const chip = el("span", "inlineCode");
       const chars = [...entry.key].map((ch) => {
         const c = document.createElement("span");
         c.textContent = ch;
         chip.append(c);
         return c;
       });
-      const title = el("span", "title");
+      const title = el("span", "title small");
       title.textContent = entry.title;
       li.append(chip, title);
       li.addEventListener("click", () => fire(entry));
@@ -464,7 +240,7 @@ li.dim {
 
   function notice(text, bad = false) {
     const li = document.createElement("li");
-    li.className = bad ? "notice bad" : "notice";
+    li.className = bad ? "notice muted destructive" : "notice muted";
     li.setAttribute("role", "presentation");
     li.textContent = text;
     return li;

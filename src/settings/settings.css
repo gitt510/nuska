@@ -1,0 +1,48 @@
+/* Where things go on the settings page. Widths, gaps and columns only;
+   type and colour come from design/theme.css roles. */
+
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 56px 24px 96px;
+  display: grid;
+  gap: 56px;
+}
+
+.section {
+  display: grid;
+  gap: 16px;
+}
+
+.bindings {
+  display: grid;
+  grid-template-columns: max-content 180px;
+  column-gap: 24px;
+  row-gap: 12px;
+  align-items: center;
+}
+.bindings .field { text-align: center; }
+.bindings > p { grid-column: 1 / -1; }
+
+.scroller { overflow-x: auto; }
+
+/* The column widths are the whole layout — without fixed, an input's own
+   intrinsic width gets a vote and the header stops lining up. */
+.shortcuts { table-layout: fixed; }
+.shortcuts col.key { width: 120px; }
+.shortcuts col.title { width: 28%; }
+.shortcuts col.act { width: 56px; }
+.shortcuts td.act { text-align: center; padding: 8px 0; }
+.shortcuts .why { display: block; margin-top: 6px; }
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}

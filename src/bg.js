@@ -25,10 +25,16 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         case "get-tree":
           sendResponse({ ok: true, tree: await api.bookmarks.getTree() });
           break;
+        case "get-history":
+          sendResponse({ ok: true, items: await api.history.search(msg.query) });
+          break;
         case "open-options":
           // Content scripts have no runtime.openOptionsPage.
           await api.runtime.openOptionsPage();
           sendResponse({ ok: true });
+          break;
+        case "get-css":
+          sendResponse({ ok: true, css: await overlayCss(msg.name) });
           break;
         default:
           throw new Error(`unknown message type: ${msg.type}`);
@@ -41,22 +47,41 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return true;
 });
 
-// Two overlays, same shape: injected into the page as a content script, with
+// An overlay lives in a shadow root inside an arbitrary page, so it cannot
+// <link> its stylesheets: the background reads them (an extension may fetch
+// its own files without exposing them to pages) and hands the text over.
+// The token file addresses :root, which never matches inside a shadow tree;
+// :host is the same element from the inside.
+const cssCache = new Map();
+async function overlayCss(name) {
+  if (!["shortcuts", "finder"].includes(name)) throw new Error(`unknown stylesheet: ${name}`);
+  if (!cssCache.has(name)) {
+    const files = ["design/tokens.css", "design/theme.css", `${name}/${name}.css`];
+    const texts = await Promise.all(files.map((f) => fetch(api.runtime.getURL(f)).then((r) => r.text())));
+    cssCache.set(name, texts.join("\n").replaceAll(":root", ":host"));
+  }
+  return cssCache.get(name);
+}
+
+// Three overlays, same shape: injected into the page as content scripts, with
 // a centered popup window as the fallback for pages that refuse injection
-// (chrome://, the Web Store, …). Both are reached by keyboard, which is what
-// grants activeTab — no host permission is involved.
+// (chrome://, the Web Store, …). All are reached by keyboard, which is what
+// grants activeTab — no host permission is involved. Bookmarks and history
+// are one finder with two sources; the source file goes in first.
 const OVERLAYS = {
-  bookmarks: { file: "bookmarks/bookmarks.js", page: "bookmarks/bookmarks.html", w: 680, h: 480 },
-  shortcuts: { file: "shortcuts/shortcuts.js", page: "shortcuts/shortcuts.html", w: 680, h: 400 },
+  bookmarks: { files: ["bookmarks/bookmarks.js", "finder/finder.js"], page: "bookmarks/bookmarks.html", w: 600, h: 480 },
+  history: { files: ["history/history.js", "finder/finder.js"], page: "history/history.html", w: 600, h: 480 },
+  shortcuts: { files: ["shortcuts/shortcuts.js"], page: "shortcuts/shortcuts.html", w: 760, h: 480 },
 };
 
 // Ctrl+B (_execute_action) and the toolbar icon open the bookmarks; Ctrl+,
-// opens the shortcuts overlay. _execute_action never fires onCommand, so both
-// listeners are needed.
+// the shortcuts; Ctrl+Y the history. _execute_action never fires onCommand,
+// so both listeners are needed.
 api.action.onClicked.addListener((tab) => openOverlay("bookmarks", tab));
 
 api.commands.onCommand.addListener((command, tab) => {
   if (command === "open-shortcuts") openOverlay("shortcuts", tab);
+  if (command === "open-history") openOverlay("history", tab);
 });
 
 // Firefox puts no Options entry in the toolbar button's context menu the way
@@ -93,12 +118,12 @@ api.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 async function openOverlay(name, tab) {
-  const { file, page, w, h } = OVERLAYS[name];
+  const { files, page, w, h } = OVERLAYS[name];
   // Chrome declares onCommand's tab as optional; ask for it when it's missing.
   const target = tab ?? (await api.tabs.query({ active: true, currentWindow: true }))[0];
   if (target?.id != null) {
     try {
-      await api.scripting.executeScript({ target: { tabId: target.id }, files: [file] });
+      await api.scripting.executeScript({ target: { tabId: target.id }, files });
       return;
     } catch {
       // injection refused — fall through to the popup window

@@ -11,7 +11,7 @@ Chrome:
 
 1. `chrome://extensions` → Developer mode ON
 2. "Load unpacked" → select the `src/` directory
-3. Prefixes are `Ctrl+B` and `Ctrl+,` (`⌃B` / `⌃,` on macOS). Chrome applies
+3. Prefixes are `Ctrl+B`, `Ctrl+,` and `Ctrl+Y` (`⌃B` / `⌃,` / `⌃Y` on macOS). Chrome applies
    `suggested_key` only at install time, so an install that predates a
    binding never picks it up — set it manually at
    `chrome://extensions/shortcuts`. The settings page reports what is
@@ -34,12 +34,20 @@ Firefox (permanent install — Firefox only accepts signed extensions):
 ### How it opens
 
 `Ctrl+B` injects the bookmarks overlay as a centered modal over the current page
-(top layer, above any page z-index). `Ctrl+,` opens the shortcuts overlay the
-same way. Pages that refuse injection (`chrome://`, the Web Store) get a
-centered popup window with the same UI.
+(top layer, above any page z-index). `Ctrl+Y` opens history and `Ctrl+,` the
+shortcuts the same way. Pages that refuse injection (`chrome://`, the Web
+Store) get a centered popup window with the same UI.
 
-Both are keyboard-only entry points, which is what grants `activeTab` — no
-host permission is involved.
+All three are keyboard-only entry points, which is what grants `activeTab` —
+no host permission is involved.
+
+### Bookmarks and history
+
+One finder, two sources. Before typing, bookmarks shows the bookmarks bar
+with its folders flattened, in bar order; history shows the last 90 days,
+most recent first. Typing fuzzy-searches everything — title, URL and, for
+bookmarks, folder name — and highlights the matched characters. `↑` `↓` or
+`⌃N` `⌃P` move, `↵` opens, `esc` clears the query and then closes.
 
 ### Shortcuts
 
@@ -50,8 +58,8 @@ screen the entire time; a row can also be clicked. There is no selection to
 move or confirm — the key is the selection.
 
 Settings is the only place shortcuts are edited — key, title, URL, one row
-each, saved to browser sync storage as you type. Three ways in: `⌃O` in the
-overlay, right-click the toolbar icon → **Shortcuts settings**, or
+each, saved to browser sync storage as you type. Three ways in: `⌃O` inside
+the overlay, right-click the toolbar icon → **Shortcuts settings**, or
 `about:addons` → the extension → Preferences.
 
 - Keys are lowercase letters and digits. **No key may be the start of
@@ -68,11 +76,25 @@ overlay, right-click the toolbar icon → **Shortcuts settings**, or
 - The whole list is one sync item, capped at 8 KB (roughly 80 shortcuts).
   Settings reports the overflow instead of writing
 
-### Themes
+### Styling
 
-`Ctrl+T` inside the bookmarks overlay toggles its theme (neon / hud), saved
-per browser. The shortcuts overlay and settings are monochrome — brightness
-is the only signal, full white is the alarm.
+Three layers under `src/design/` and one layout file per surface:
+
+- `design/tokens.css` — values only, shadcn semantic names (`--background`,
+  `--muted-foreground`, `--border`, `--input`, `--ring`, …) on Tailwind zinc.
+  The single accent is `--ring`: whatever is answering the keyboard turns
+  blue — a focused field, a matching key chip, matched search characters
+- `design/theme.css` — how things look: shadcn/ui typography roles (`h2`,
+  `p`, `small`, `muted`, `inlineCode`, `table`, …) with their verbatim
+  values, plus control states. The only file that sets `font-size`,
+  `font-family`, `font-weight` or `line-height`; nothing is below 14px
+- `settings/settings.css`, `shortcuts/shortcuts.css`, `finder/finder.css` —
+  where things go: widths, gaps, columns
+
+Overlays live in a shadow root inside an arbitrary page, so they cannot
+`<link>` a stylesheet; `bg.js` reads the three files and hands the text over
+(`get-css`), rewriting `:root` to `:host`. The fallback windows link the same
+files directly.
 
 ### Hot reload
 
