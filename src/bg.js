@@ -36,6 +36,10 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         case "get-css":
           sendResponse({ ok: true, css: await overlayCss(msg.name) });
           break;
+        case "run-tool":
+          await runTool(msg.id, msg.windowId ?? sender.tab?.windowId, sender.tab, msg.screen);
+          sendResponse({ ok: true });
+          break;
         default:
           throw new Error(`unknown message type: ${msg.type}`);
       }
@@ -54,7 +58,7 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // :host is the same element from the inside.
 const cssCache = new Map();
 async function overlayCss(name) {
-  if (!["shortcuts", "finder"].includes(name)) throw new Error(`unknown stylesheet: ${name}`);
+  if (!["keys", "finder"].includes(name)) throw new Error(`unknown stylesheet: ${name}`);
   if (!cssCache.has(name)) {
     const files = ["design/tokens.css", "design/theme.css", `${name}/${name}.css`];
     const texts = await Promise.all(files.map((f) => fetch(api.runtime.getURL(f)).then((r) => r.text())));
@@ -63,25 +67,29 @@ async function overlayCss(name) {
   return cssCache.get(name);
 }
 
-// Three overlays, same shape: injected into the page as content scripts, with
+// Four overlays, same shape: injected into the page as content scripts, with
 // a centered popup window as the fallback for pages that refuse injection
 // (chrome://, the Web Store, …). All are reached by keyboard, which is what
-// grants activeTab — no host permission is involved. Bookmarks and history
-// are one finder with two sources; the source file goes in first.
+// grants activeTab — no host permission is involved. Two engines, each with
+// two sources; the source file goes in first. Bookmarks and history are the
+// finder (search, move, confirm); shortcuts and tools are the keys list (the
+// key is the selection).
 const OVERLAYS = {
   bookmarks: { files: ["bookmarks/bookmarks.js", "finder/finder.js"], page: "bookmarks/bookmarks.html", w: 600, h: 480 },
   history: { files: ["history/history.js", "finder/finder.js"], page: "history/history.html", w: 600, h: 480 },
-  shortcuts: { files: ["shortcuts/shortcuts.js"], page: "shortcuts/shortcuts.html", w: 760, h: 480 },
+  shortcuts: { files: ["shortcuts/shortcuts.js", "keys/keys.js"], page: "shortcuts/shortcuts.html", w: 760, h: 480 },
+  tools: { files: ["tools/tools.js", "keys/keys.js"], page: "tools/tools.html", w: 760, h: 240 },
 };
 
 // Ctrl+B (_execute_action) and the toolbar icon open the bookmarks; Ctrl+,
-// the shortcuts; Ctrl+Y the history. _execute_action never fires onCommand,
-// so both listeners are needed.
+// the shortcuts; Ctrl+Y the history; Ctrl+T the tools. _execute_action never
+// fires onCommand, so both listeners are needed.
 api.action.onClicked.addListener((tab) => openOverlay("bookmarks", tab));
 
 api.commands.onCommand.addListener((command, tab) => {
   if (command === "open-shortcuts") openOverlay("shortcuts", tab);
   if (command === "open-history") openOverlay("history", tab);
+  if (command === "open-tools") openOverlay("tools", tab);
 });
 
 // Firefox puts no Options entry in the toolbar button's context menu the way
@@ -138,6 +146,54 @@ async function openOverlay(name, tab) {
     left: Math.round((win.left ?? 0) + ((win.width ?? w) - w) / 2),
     top: Math.round((win.top ?? 0) + ((win.height ?? h) - h) * 0.22),
   });
+}
+
+// --- tools ---
+// Window chores fired from the tools overlay. `windowId` is the page's window
+// (the overlay's own tab, or the origin the fallback window was given);
+// `screen` is that monitor's usable box, measured by the overlay because a
+// service worker has no `screen`.
+
+async function runTool(id, windowId, senderTab, screen) {
+  const origin = await api.windows.get(windowId, { populate: true });
+  if (id === "merge-windows") return mergeWindows(origin);
+  if (id === "split-window") return splitWindow(origin, senderTab, screen);
+  throw new Error(`unknown tool: ${id}`);
+}
+
+// Every other normal window's tabs move into the origin window, in window
+// order, appended. Private windows stay out of non-private ones and vice
+// versa (the browser refuses the move anyway). Emptied windows close by
+// themselves. Chrome drops the pinned flag on a cross-window move, so it is
+// put back.
+async function mergeWindows(origin) {
+  const windows = await api.windows.getAll({ populate: true, windowTypes: ["normal"] });
+  for (const win of windows) {
+    if (win.id === origin.id || win.incognito !== origin.incognito) continue;
+    const tabs = win.tabs ?? [];
+    if (!tabs.length) continue;
+    await api.tabs.move(
+      tabs.map((t) => t.id),
+      { windowId: origin.id, index: -1 },
+    );
+    for (const t of tabs) if (t.pinned) await api.tabs.update(t.id, { pinned: true });
+  }
+  await api.windows.update(origin.id, { focused: true });
+}
+
+// The page's tab moves out into a new window and the two share the screen,
+// origin on the left. A window that holds only that tab has nothing to split
+// off, so nothing happens. A maximized or fullscreen window ignores bounds,
+// hence the state reset first.
+async function splitWindow(origin, senderTab, screen) {
+  const tab = senderTab ?? origin.tabs?.find((t) => t.active);
+  if (!tab || (origin.tabs ?? []).length < 2) return;
+  const half = Math.floor(screen.width / 2);
+  const left = { left: screen.left, top: screen.top, width: half, height: screen.height };
+  const right = { left: screen.left + half, top: screen.top, width: screen.width - half, height: screen.height };
+  if (origin.state !== "normal") await api.windows.update(origin.id, { state: "normal" });
+  await api.windows.update(origin.id, left);
+  await api.windows.create({ tabId: tab.id, ...right, focused: true });
 }
 
 // --- dev seed (development installs only) ---
@@ -202,4 +258,6 @@ async function devFetch() {
     return null;
   }
 }
+
+
 

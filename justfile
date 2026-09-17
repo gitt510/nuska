@@ -9,7 +9,7 @@ dev:
 # Fail if a layout file or script styles what design/theme.css owns
 [group('dev')]
 check-layers:
-    @! grep -rnE '(^|[^-])(font|line-height|letter-spacing|color|background|border|outline|box-shadow|opacity|cursor|transition)[a-z-]*:' src --include='*.js' --include='*.html' --include='settings.css' --include='shortcuts.css' --include='finder.css' || { echo 'layer violation: only design/theme.css may set these'; exit 1; }
+    @! grep -rnE '(^|[^-])(font|line-height|letter-spacing|color|background|border|outline|box-shadow|opacity|cursor|transition)[a-z-]*:' src --include='*.js' --include='*.html' --include='settings.css' --include='keys.css' --include='finder.css' || { echo 'layer violation: only design/theme.css may set these'; exit 1; }
     @echo 'layers ok'
 
 # Run Firefox with the extension loaded, auto-reload on save

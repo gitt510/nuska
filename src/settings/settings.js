@@ -294,6 +294,7 @@
     { name: "_execute_action", label: "Bookmarks" },
     { name: "open-shortcuts", label: "Shortcuts" },
     { name: "open-history", label: "History" },
+    { name: "open-tools", label: "Tools" },
   ];
 
   async function renderBindings() {
@@ -347,7 +348,26 @@
     return input;
   }
 
+  // Firefox's own letter shortcuts, read off browser-sets.inc.xhtml and
+  // browserSets.ftl (Firefox 155). The browser's <key> fires first, so an
+  // extension bound to one of these never hears the press — yet
+  // commands.update accepts it and about:addons shows it as bound. On macOS
+  // the bare-Control four are the trap: they look free and are not.
+  const FIREFOX_KEYS = navigator.platform.includes("Mac")
+    ? new Set([
+        ...["M", "U", "X", "Z"].map((k) => `MacCtrl+${k}`),
+        ..."B D E F G H I K L M N O P Q R S T U W Y".split(" ").map((k) => `Command+${k}`),
+      ])
+    : new Set([
+        ..."B D E F G H I K L M N O P Q R S T U W Y".split(" ").map((k) => `Ctrl+${k}`),
+        ..."A B D F G H N O P R T W X".split(" ").map((k) => `Ctrl+Shift+${k}`),
+      ]);
+
   async function rebind(name, shortcut, input) {
+    if (FIREFOX_KEYS.has(shortcut)) {
+      setStatus(`not rebound: ${pretty(shortcut)} is one of Firefox's own shortcuts and would never reach the extension`, true);
+      return;
+    }
     try {
       await api.commands.update({ name, shortcut });
       input.value = shortcut;
@@ -355,6 +375,11 @@
     } catch (err) {
       setStatus(`not rebound: ${err.message ?? err}`, true);
     }
+  }
+
+  function pretty(shortcut) {
+    if (!navigator.platform.includes("Mac")) return shortcut;
+    return shortcut.replace("MacCtrl+", "⌃").replace("Command+", "⌘").replace("Shift+", "⇧").replace("Alt+", "⌥");
   }
 
   // Builds a manifest-syntax shortcut ("MacCtrl+Comma") from a keydown, or

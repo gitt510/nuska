@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Shukuchi",
   "version": "0.1.18",
-  "description": "One shortcut opens your bookmarks bar with fuzzy search, one your history, another fires your key-to-URL shortcuts.",
+  "description": "One shortcut opens your bookmarks bar with fuzzy search, one your history, one your key-to-URL shortcuts, and one a few window tools.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -59,6 +59,13 @@
         "mac": "MacCtrl+Y"
       },
       "description": "Open history"
+    },
+    "open-tools": {
+      "suggested_key": {
+        "default": "Alt+Shift+T",
+        "mac": "MacCtrl+T"
+      },
+      "description": "Open tools"
     }
   },
   "browser_specific_settings": {

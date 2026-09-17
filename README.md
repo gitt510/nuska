@@ -11,7 +11,7 @@ Chrome:
 
 1. `chrome://extensions` → Developer mode ON
 2. "Load unpacked" → select the `src/` directory
-3. Prefixes are `Ctrl+B`, `Ctrl+,` and `Ctrl+Y` (`⌃B` / `⌃,` / `⌃Y` on macOS). Chrome applies
+3. Prefixes are `Ctrl+B`, `Ctrl+,`, `Ctrl+Y` and `Alt+Shift+T` (`⌃B` / `⌃,` / `⌃Y` / `⌃T` on macOS). Chrome applies
    `suggested_key` only at install time, so an install that predates a
    binding never picks it up — set it manually at
    `chrome://extensions/shortcuts`. The settings page reports what is
@@ -34,11 +34,11 @@ Firefox (permanent install — Firefox only accepts signed extensions):
 ### How it opens
 
 `Ctrl+B` injects the bookmarks overlay as a centered modal over the current page
-(top layer, above any page z-index). `Ctrl+Y` opens history and `Ctrl+,` the
-shortcuts the same way. Pages that refuse injection (`chrome://`, the Web
-Store) get a centered popup window with the same UI.
+(top layer, above any page z-index). `Ctrl+Y` opens history, `Ctrl+,` the
+shortcuts and `Alt+Shift+T` (`⌃T` on macOS) the tools the same way. Pages that refuse injection
+(`chrome://`, the Web Store) get a centered popup window with the same UI.
 
-All three are keyboard-only entry points, which is what grants `activeTab` —
+All four are keyboard-only entry points, which is what grants `activeTab` —
 no host permission is involved.
 
 ### Bookmarks and history
@@ -76,6 +76,31 @@ the overlay, right-click the toolbar icon → **Shortcuts settings**, or
 - The whole list is one sync item, capped at 8 KB (roughly 80 shortcuts).
   Settings reports the overflow instead of writing
 
+### Tools
+
+`⌃T` (`Alt+Shift+T` on Windows and Linux, where `Ctrl+T` is the browser's own
+new-tab key and off limits to extensions) lists a fixed set of window chores,
+driven like the shortcuts: the key fires the moment it is typed.
+
+A key Firefox already uses never reaches an extension: the browser's own
+key fires first, though `about:addons` still shows the binding as taken.
+The settings page refuses those instead of saving a binding that cannot
+work. On macOS the trap is the bare-Control four — `⌃U` `⌃X` `⌃Z` `⌃M`
+(sidebars and mute) — which look free and are not; the `⌘` letters and, on
+Windows and Linux, the `Ctrl` and `Ctrl+Shift` letters are the familiar
+browser shortcuts.
+
+- `m` **Merge windows** — every other normal window's tabs move into this
+  one, appended in window order; the emptied windows close on their own.
+  Private windows and normal ones never mix. Pinned tabs stay pinned
+- `s` **Split window** — this tab moves out to a new window and the two share
+  the screen side by side, the original on the left. Uses the monitor the
+  page is on; a window with a single tab has nothing to split and is left
+  alone
+
+The browser exposes its own split view (Firefox 149, Chrome 145) to
+extensions read-only, so this is done with plain windows.
+
 ### Styling
 
 Three layers under `src/design/` and one layout file per surface:
@@ -88,8 +113,10 @@ Three layers under `src/design/` and one layout file per surface:
   `p`, `small`, `muted`, `inlineCode`, `table`, …) with their verbatim
   values, plus control states. The only file that sets `font-size`,
   `font-family`, `font-weight` or `line-height`; nothing is below 14px
-- `settings/settings.css`, `shortcuts/shortcuts.css`, `finder/finder.css` —
-  where things go: widths, gaps, columns
+- `settings/settings.css`, `keys/keys.css`, `finder/finder.css` — where things
+  go: widths, gaps, columns. Two overlay engines: `finder/` (bookmarks,
+  history — search, move, confirm) and `keys/` (shortcuts, tools — the key
+  is the selection); each source is one file injected ahead of the engine
 
 Overlays live in a shadow root inside an arbitrary page, so they cannot
 `<link>` a stylesheet; `bg.js` reads the three files and hands the text over

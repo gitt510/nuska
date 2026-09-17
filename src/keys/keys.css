@@ -1,6 +1,6 @@
-/* Where things go in the shortcuts overlay. Type and colour come from
+/* Where things go in the keys overlay (shortcuts, tools). Type and colour come from
    design/theme.css roles. Loaded into the shadow root by bg.js, or by
-   shortcuts.html in the fallback window. */
+   <kind>.html in the fallback window. */
 
 dialog {
   width: min(720px, 94vw);
