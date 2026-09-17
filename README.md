@@ -1,7 +1,8 @@
-# Shukuchi
+# Nuska
 
 Keyboard-driven bookmarks extension for Chrome and Firefox. Named after
-縮地 — the art of shrinking the ground to arrive in one step.
+Nuska, the Mesopotamian god of light and messenger of the gods, whose bird is
+the rooster that calls the day in.
 
 ## Development flow
 
@@ -142,4 +143,5 @@ browser about 1s later — no manual ⟳.
 
 ## Credits
 
-Toolbar/app icon: original — two points joined by a folded path (縮地).
+Toolbar/app icon: original — a bird in the manner of the Nazca lines, drawn
+from `src/icons/icon.svg` with `rsvg-convert` at 16, 32, 48 and 128.

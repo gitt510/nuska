@@ -1,7 +1,7 @@
 // History source for the finder overlay (finder/finder.js is injected right
 // after this file). At rest and in search alike the corpus is the last 90
 // days, most recent first, one row per URL.
-globalThis.__shukuchiSource = {
+globalThis.__nuskaSource = {
   kind: "history",
   placeholder: "history…",
 

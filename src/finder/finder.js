@@ -1,6 +1,6 @@
 // Finder overlay: one search box over a list of pages, shared by bookmarks and
 // history. The file injected just before this one (bookmarks/bookmarks.js or
-// history/history.js) leaves its source on globalThis.__shukuchiSource:
+// history/history.js) leaves its source on globalThis.__nuskaSource:
 //   { kind, placeholder, load(api, inPage) → { rest, all } }
 // where every entry is { title, url, host, matchUrl, path }. `rest` is what
 // shows before typing; `all` is the fuzzy-search corpus.
@@ -12,11 +12,11 @@
 //    refuse injection (chrome://, the Web Store, …)
 (() => {
   const api = globalThis.browser ?? globalThis.chrome;
-  const source = globalThis.__shukuchiSource;
+  const source = globalThis.__nuskaSource;
   const IN_PAGE = !location.href.startsWith(api.runtime.getURL(""));
 
   // Re-injecting toggles the already-open finder of the same kind instead.
-  const toggles = (globalThis.__shukuchiToggles ??= {});
+  const toggles = (globalThis.__nuskaToggles ??= {});
   if (IN_PAGE && toggles[source.kind]) {
     toggles[source.kind]();
     return;

@@ -1,7 +1,7 @@
 // Tools source for the keys overlay (keys/keys.js is injected right after
 // this file): window chores that have no UI of their own. The set is fixed
 // and prefix-free; each key names a `run-tool` action in bg.js.
-globalThis.__shukuchiKeys = {
+globalThis.__nuskaKeys = {
   kind: "tools",
   label: "Tools",
   settings: false,

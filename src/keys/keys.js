@@ -1,7 +1,7 @@
 // Keys overlay: a list of key → action pairs where the key IS the selection,
 // shared by shortcuts and tools. The file injected just before this one
 // (shortcuts/shortcuts.js or tools/tools.js) leaves its source on
-// globalThis.__shukuchiKeys:
+// globalThis.__nuskaKeys:
 //   { kind, label, settings, load(api) → [{ key, title, hint }], fire(api, entry, ctx) }
 // `settings` says whether ⌃O and the empty notice lead to the options page.
 // `ctx` is { originWindowId, screen } — what an action needs to act on the
@@ -19,12 +19,12 @@
 // or confirm.
 (() => {
   const api = globalThis.browser ?? globalThis.chrome;
-  const source = globalThis.__shukuchiKeys;
+  const source = globalThis.__nuskaKeys;
   // Extension pages live under runtime.getURL(""); injected ones never do.
   const IN_PAGE = !location.href.startsWith(api.runtime.getURL(""));
 
   // Re-injecting the file toggles the already-open overlay of the same kind.
-  const toggles = (globalThis.__shukuchiToggles ??= {});
+  const toggles = (globalThis.__nuskaToggles ??= {});
   if (IN_PAGE && toggles[source.kind]) {
     toggles[source.kind]();
     return;

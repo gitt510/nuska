@@ -1,7 +1,7 @@
 // Shortcuts source for the keys overlay (keys/keys.js is injected right after
 // this file). Execute-only — the settings page owns the list, kept in browser
 // sync storage as one item.
-globalThis.__shukuchiKeys = {
+globalThis.__nuskaKeys = {
   kind: "shortcuts",
   label: "Shortcuts",
   settings: true,

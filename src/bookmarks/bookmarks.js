@@ -1,7 +1,7 @@
 // Bookmarks source for the finder overlay (finder/finder.js is injected right
 // after this file). At rest: the bookmarks bar, folders flattened, in bar
 // order. Search: every bookmark, matched on title, URL and folder path.
-globalThis.__shukuchiSource = {
+globalThis.__nuskaSource = {
   kind: "bookmarks",
   placeholder: "bookmarks…",
 
