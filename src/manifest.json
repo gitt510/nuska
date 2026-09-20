@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Nuska",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "description": "One shortcut opens your bookmarks bar with fuzzy search, one your history, one your key-to-URL shortcuts, and one a few window tools.",
   "icons": {
     "16": "icons/icon-16.png",
