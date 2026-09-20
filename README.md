@@ -1,8 +1,28 @@
 # Nuska
 
-Keyboard-driven bookmarks extension for Chrome and Firefox. Named after
-Nuska, the Mesopotamian god of light and messenger of the gods, whose bird is
-the rooster that calls the day in.
+Keyboard-driven bookmarks, history, and shortcuts for Chrome and Firefox.
+One key opens a fuzzy finder over your bookmarks bar, one over your history,
+one a list of key-to-URL shortcuts that fire the moment the key is typed,
+and one a few window tools. Everything is an overlay on the current page:
+no popup, no new tab, no mouse.
+
+| Key | Opens |
+| --- | --- |
+| `Ctrl+B` | bookmarks bar, flattened, fuzzy-searched |
+| `Ctrl+Y` | history, last 90 days |
+| `Ctrl+,` | key-to-URL shortcuts (`gh` → GitHub, and so on) |
+| `Alt+Shift+T` (`⌃T` on macOS) | window tools: merge, split |
+
+Runs on `activeTab`, so it reads no page; the only host permission is
+`127.0.0.1`, for the development hot-reload watcher.
+Shortcuts are stored in browser sync storage. Named after Nuska, the
+Mesopotamian god of light and messenger of the gods, whose bird is the
+rooster that calls the day in.
+
+## Install
+
+There is no store listing yet. Chrome loads `src/` unpacked; Firefox needs a
+signed build. Both are covered under [Development flow](#development-flow).
 
 ## Development flow
 
