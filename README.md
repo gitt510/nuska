@@ -41,9 +41,10 @@ Chrome:
 Firefox (permanent install — Firefox only accepts signed extensions):
 
 1. Store AMO API credentials
-   (<https://addons.mozilla.org/developers/addon/api/key/>) in 1Password as
-   item `firefox-addons` in the `Personal` vault, with fields `api-key` and
-   `api-secret`. `op.env` holds only `op://` references — no secrets on disk
+   (<https://addons.mozilla.org/developers/addon/api/key/>) in 1Password on
+   the `Firefox` item in the `Personal` vault, as fields `nuska-api-key` and
+   `nuska-api-secret` under a `tokens` section. `op.env` holds only `op://`
+   references — no secrets on disk
 2. `just install-ff` — bumps the patch version, signs an unlisted build on
    AMO (credentials injected via `op run`), and opens the signed `.xpi` in
    Firefox; click "Add" in the prompt
