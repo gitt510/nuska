@@ -163,5 +163,5 @@ browser about 1s later — no manual ⟳.
 
 ## Credits
 
-Toolbar/app icon: original — a bird in the manner of the Nazca lines, drawn
+Toolbar/app icon: original — a small bird in open line strokes, drawn
 from `src/icons/icon.svg` with `rsvg-convert` at 16, 32, 48 and 128.
