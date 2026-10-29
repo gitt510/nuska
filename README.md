@@ -44,9 +44,14 @@ Firefox (permanent install — Firefox only accepts signed extensions):
    (<https://addons.mozilla.org/developers/addon/api/key/>) in 1Password as
    item `firefox-addons` in the `Personal` vault, with fields `api-key` and
    `api-secret`. `op.env` holds only `op://` references — no secrets on disk
-2. `just install-ff` — bumps the patch version, signs an unlisted build on
-   AMO (credentials injected via `op run`), and opens the signed `.xpi` in
-   Firefox; click "Add" in the prompt
+2. Release from main only:
+   - `just bump` in the PR that ships the change; AMO burns a version number
+     on every sign, so a version is signed once
+   - after the merge, `just install-ff` on a clean `main` signs an unlisted
+     build on AMO (credentials injected via `op run`), tags and pushes
+     `v<version>`, and opens the signed `.xpi` in Firefox; click "Add"
+   - `sign` refuses another branch, uncommitted changes, or a version that is
+     already tagged
 3. For development sessions, `just dev-ff` instead runs a throwaway Firefox
    with the extension loaded and reload-on-save (no signing needed). The
    empty profile seeds itself with `src/dev-seed.json` on install —
