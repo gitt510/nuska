@@ -11,7 +11,7 @@ globalThis.__nuskaSource = {
   },
 };
 
-// Content scripts have no bookmarks API; bg.js reads the tree for them.
+// Content scripts have no bookmarks API; background.js reads the tree for them.
 async function fromBackground(api) {
   const res = await api.runtime.sendMessage({ type: "get-tree" });
   if (!res?.ok) throw new Error(res?.error ?? "no response from background");

@@ -31,7 +31,7 @@ function historyQuery() {
   return { text: "", maxResults: 2000, startTime: Date.now() - 90 * 24 * 60 * 60 * 1000 };
 }
 
-// Content scripts have no history API; bg.js runs the query for them.
+// Content scripts have no history API; background.js runs the query for them.
 async function fromBackground(api) {
   const res = await api.runtime.sendMessage({ type: "get-history", query: historyQuery() });
   if (!res?.ok) throw new Error(res?.error ?? "no response from background");

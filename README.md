@@ -78,8 +78,9 @@ dims what no longer matches instead of removing it, so the whole set stays on
 screen the entire time; a row can also be clicked. There is no selection to
 move or confirm — the key is the selection.
 
-Settings is the only place shortcuts are edited — key, title, URL, one row
-each, saved to browser sync storage as you type. Three ways in: `⌃O` inside
+Settings is the only place shortcuts are edited. They show as a list; a row
+(or **Add shortcut**) opens an editor for key, title and URL, and **Save**
+writes to browser sync storage. Three ways in: `⌃O` inside
 the overlay, right-click the toolbar icon → **Shortcuts settings**, or
 `about:addons` → the extension → Preferences.
 
@@ -92,8 +93,8 @@ the overlay, right-click the toolbar icon → **Shortcuts settings**, or
   or a ShortcutKey2URL export as-is. Keys are lowercased, a key already in the
   table is replaced, and entries without a URL — SK2U's script-only actions —
   are skipped. There is no export: browser sync already holds the list
-- A row with an error stays on screen and is left out of the saved set, so
-  one broken row cannot take the others down with it
+- The editor refuses to save a shortcut with an error and marks the field at
+  fault, so storage never holds a broken one. Import skips such entries
 - The whole list is one sync item, capped at 8 KB (roughly 80 shortcuts).
   Settings reports the overflow instead of writing
 
@@ -124,25 +125,28 @@ extensions read-only, so this is done with plain windows.
 
 ### Styling
 
-Three layers under `src/design/` and one layout file per surface:
+Bootstrap 5.3 (`src/styles/bootstrap.min.css`) is the whole design: Nuska
+ships no CSS and no tokens of its own. The layout follows shadcn's:
 
-- `design/tokens.css` — values only, shadcn semantic names (`--background`,
-  `--muted-foreground`, `--border`, `--input`, `--ring`, …) on Tailwind zinc.
-  The single accent is `--ring`: whatever is answering the keyboard turns
-  blue — a focused field, a matching key chip, matched search characters
-- `design/theme.css` — how things look: shadcn/ui typography roles (`h2`,
-  `p`, `small`, `muted`, `inlineCode`, `table`, …) with their verbatim
-  values, plus control states. The only file that sets `font-size`,
-  `font-family`, `font-weight` or `line-height`; nothing is below 14px
-- `settings/settings.css`, `keys/keys.css`, `finder/finder.css` — where things
-  go: widths, gaps, columns. Two overlay engines: `finder/` (bookmarks,
-  history — search, move, confirm) and `keys/` (shortcuts, tools — the key
-  is the selection); each source is one file injected ahead of the engine
+- `components/ui.js` — the one seam to Bootstrap. Every class a script needs
+  is named here; the engines and the settings page build their DOM from it.
+  Static class names otherwise appear only in `app/*.html`
+- `components/finder.js`, `components/keys.js` — the two overlay engines:
+  finder (bookmarks, history — search, move, confirm) and keys (shortcuts,
+  tools — the key is the selection)
+- `lib/` — each overlay's data source, one file injected ahead of its engine
+- `app/` — pages: `settings.html`, and `overlay.html`, the fallback window
+  that loads the same files the background would have injected
+- Light or dark follows the system, set as Bootstrap's `data-bs-theme`
+- The accent is one of Bootstrap's theme colours (green by default; also
+  blue, cyan, yellow, red, gray), picked in settings and kept in sync storage; `ui.js` turns it
+  into `text-bg-*` / `btn-*` classes, so no stylesheet is involved
 
 Overlays live in a shadow root inside an arbitrary page, so they cannot
-`<link>` a stylesheet; `bg.js` reads the three files and hands the text over
-(`get-css`), rewriting `:root` to `:host`. The fallback windows link the same
-files directly.
+`<link>` a stylesheet; `background.js` reads Bootstrap and hands the text over
+(`get-css`), rewriting `:root` and the base `body` rule to `:host`.
+`just check-css` keeps it that way: no stylesheet outside `src/styles/` and
+no inline styles.
 
 ### Hot reload
 
@@ -164,4 +168,4 @@ browser about 1s later — no manual ⟳.
 ## Credits
 
 Toolbar/app icon: original — a small bird in open line strokes, drawn
-from `src/icons/icon.svg` with `rsvg-convert` at 16, 32, 48 and 128.
+from `src/public/icons/icon.svg` with `rsvg-convert` at 16, 32, 48 and 128.

@@ -34,7 +34,7 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           sendResponse({ ok: true });
           break;
         case "get-css":
-          sendResponse({ ok: true, css: await overlayCss(msg.name) });
+          sendResponse({ ok: true, css: await overlayCss() });
           break;
         case "run-tool":
           await runTool(msg.id, msg.windowId ?? sender.tab?.windowId, sender.tab, msg.screen);
@@ -52,19 +52,17 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 // An overlay lives in a shadow root inside an arbitrary page, so it cannot
-// <link> its stylesheets: the background reads them (an extension may fetch
-// its own files without exposing them to pages) and hands the text over.
-// The token file addresses :root, which never matches inside a shadow tree;
-// :host is the same element from the inside.
-const cssCache = new Map();
-async function overlayCss(name) {
-  if (!["keys", "finder"].includes(name)) throw new Error(`unknown stylesheet: ${name}`);
-  if (!cssCache.has(name)) {
-    const files = ["design/tokens.css", "design/theme.css", `${name}/${name}.css`];
-    const texts = await Promise.all(files.map((f) => fetch(api.runtime.getURL(f)).then((r) => r.text())));
-    cssCache.set(name, texts.join("\n").replaceAll(":root", ":host"));
-  }
-  return cssCache.get(name);
+// <link> its stylesheet: the background reads it (an extension may fetch its
+// own files without exposing them to pages) and hands the text over.
+// Bootstrap puts its variables on :root and its base type on body, neither of
+// which exists inside a shadow tree; :host is that element from the inside.
+let overlayCssText = null;
+
+async function overlayCss() {
+  overlayCssText ??= (await fetch(api.runtime.getURL("styles/bootstrap.min.css")).then((r) => r.text()))
+    .replaceAll(":root", ":host")
+    .replace("}body{margin:0;", "}:host{margin:0;");
+  return overlayCssText;
 }
 
 // Four overlays, same shape: injected into the page as content scripts, with
@@ -74,11 +72,12 @@ async function overlayCss(name) {
 // two sources; the source file goes in first. Bookmarks and history are the
 // finder (search, move, confirm); shortcuts and tools are the keys list (the
 // key is the selection).
+// components/ui.js goes first: both engines build their DOM from it.
 const OVERLAYS = {
-  bookmarks: { files: ["bookmarks/bookmarks.js", "finder/finder.js"], page: "bookmarks/bookmarks.html", w: 600, h: 480 },
-  history: { files: ["history/history.js", "finder/finder.js"], page: "history/history.html", w: 600, h: 480 },
-  shortcuts: { files: ["shortcuts/shortcuts.js", "keys/keys.js"], page: "shortcuts/shortcuts.html", w: 760, h: 480 },
-  tools: { files: ["tools/tools.js", "keys/keys.js"], page: "tools/tools.html", w: 760, h: 240 },
+  bookmarks: { files: ["components/ui.js", "lib/bookmarks.js", "components/finder.js"], w: 760, h: 480 },
+  history: { files: ["components/ui.js", "lib/history.js", "components/finder.js"], w: 760, h: 480 },
+  shortcuts: { files: ["components/ui.js", "lib/shortcuts.js", "components/keys.js"], w: 760, h: 480 },
+  tools: { files: ["components/ui.js", "lib/tools.js", "components/keys.js"], w: 760, h: 240 },
 };
 
 // Ctrl+B (_execute_action) and the toolbar icon open the bookmarks; Ctrl+,
@@ -126,7 +125,7 @@ api.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 async function openOverlay(name, tab) {
-  const { files, page, w, h } = OVERLAYS[name];
+  const { files, w, h } = OVERLAYS[name];
   // Chrome declares onCommand's tab as optional; ask for it when it's missing.
   const target = tab ?? (await api.tabs.query({ active: true, currentWindow: true }))[0];
   if (target?.id != null) {
@@ -139,7 +138,7 @@ async function openOverlay(name, tab) {
   }
   const win = await api.windows.getLastFocused();
   await api.windows.create({
-    url: api.runtime.getURL(`${page}?origin=${target?.windowId ?? win.id}`),
+    url: api.runtime.getURL(`app/overlay.html?origin=${target?.windowId ?? win.id}&files=${files.join(",")}`),
     type: "popup",
     width: w,
     height: h,
@@ -198,22 +197,33 @@ async function splitWindow(origin, senderTab, screen) {
 
 // --- dev seed (development installs only) ---
 // web-ext run starts from an empty throwaway profile every time, so a fresh
-// development install with no shortcuts gets the sample set. Signed installs
-// report installType "normal" and never reach this; a profile that already
-// has shortcuts is left alone.
+// development install gets the sample shortcuts and bookmarks bar. Signed
+// installs report installType "normal" and never reach this; a profile that
+// already has shortcuts keeps them. Bookmarks go in on every development
+// install, since a new Firefox profile's bar is never quite empty.
 api.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason !== "install") return;
   try {
     const { installType } = await api.management.getSelf();
     if (installType !== "development") return;
-    const { shortcuts } = await api.storage.sync.get("shortcuts");
-    if (shortcuts?.length) return;
     const seed = await (await fetch(api.runtime.getURL("dev-seed.json"))).json();
-    await api.storage.sync.set({ shortcuts: seed });
+    const { shortcuts } = await api.storage.sync.get("shortcuts");
+    if (!shortcuts?.length) await api.storage.sync.set({ shortcuts: seed.shortcuts });
+    // The bookmarks bar folder: Chrome id "1" / Firefox id "toolbar_____".
+    const top = (await api.bookmarks.getTree())[0].children ?? [];
+    const bar = top.find((n) => n.id === "1" || n.id === "toolbar_____") ?? top[0];
+    await seedBookmarks(bar.id, seed.bookmarks);
   } catch (err) {
     console.warn("dev seed skipped:", err); // convenience only — never fatal
   }
 });
+
+async function seedBookmarks(parentId, nodes) {
+  for (const { title, url, children } of nodes) {
+    const node = await api.bookmarks.create({ parentId, title, url });
+    if (children) await seedBookmarks(node.id, children);
+  }
+}
 
 // --- dev hot-reload (unpacked builds only) ---
 // An extension cannot watch its own source files, so scripts/dev-server.mjs
