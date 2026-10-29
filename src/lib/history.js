@@ -3,7 +3,8 @@
 // days, most recent first, one row per URL.
 globalThis.__nuskaSource = {
   kind: "history",
-  placeholder: "history…",
+  label: "History",
+  placeholder: "Search by title or URL",
 
   async load(api, inPage) {
     const items = inPage ? await fromBackground(api) : await api.history.search(historyQuery());

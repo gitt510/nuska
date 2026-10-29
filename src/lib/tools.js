@@ -4,6 +4,7 @@
 globalThis.__nuskaKeys = {
   kind: "tools",
   label: "Tools",
+  placeholder: "Type a key",
   settings: false,
 
   async load() {

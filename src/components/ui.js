@@ -41,14 +41,18 @@ globalThis.__nuskaUi ??= (() => {
   // A native <dialog> filling the viewport (so a click on it is a click
   // outside the card), holding Bootstrap's modal markup as the card. `.modal`
   // carries the width and margin variables .modal-dialog reads; d-block shows it.
-  // Every overlay is the same width: modal-lg fits the keys grid's three columns.
-  function dialog(label) {
+  // Every overlay is the same width (modal-lg), so they read as one family.
+  // In the fallback window the window is the frame, so the card fills it,
+  // square; on a page it floats, with a rounder radius than Bootstrap's modal.
+  function dialog(label, { fill = false } = {}) {
     const root = make("dialog", "modal d-block mw-100 mh-100 m-0 p-0 border-0 bg-transparent text-body");
     root.setAttribute("aria-label", label);
     theme(root);
-    const frame = make("div", "modal-dialog modal-dialog-scrollable modal-lg");
-    const content = make("div", "modal-content shadow-lg");
-    const header = make("div", "modal-header gap-2 p-2");
+    const frame = make("div", `modal-dialog modal-dialog-scrollable ${fill ? "modal-fullscreen" : "modal-lg"}`);
+    const content = make("div", `modal-content shadow-lg${fill ? "" : " rounded-4"}`);
+    // The header holds only the field and a short note on the right (a count,
+    // a miss); the field's placeholder says what it searches.
+    const header = make("div", "modal-header p-2");
     const body = make("div", "modal-body p-2");
     content.append(header, body);
     frame.append(content);
@@ -74,14 +78,30 @@ globalThis.__nuskaUi ??= (() => {
     return make("div", "list-group list-group-flush");
   }
 
-  function option(title, meta) {
-    const row = make("div", "list-group-item list-group-item-action rounded border-0 d-flex justify-content-between gap-3");
-    row.append(title, make("small", "opacity-75 text-nowrap", meta));
+  // The one row every list uses: an optional key chip, then the title with a
+  // note right beside it in the tertiary tone, so one glance reads both.
+  // `title` is text or a node (the finder passes one with matches marked).
+  // A button when it sits outside a listbox.
+  const notes = new WeakMap(); // row → its note, for select()
+  function option({ chip = null, title, meta = "", button = false }) {
+    const row = make(button ? "button" : "div", "list-group-item list-group-item-action rounded-3 border-0 d-flex align-items-center gap-3");
+    if (button) row.type = "button";
+    if (chip) row.append(chip);
+    const line = make("span", "d-flex align-items-baseline gap-2 text-truncate");
+    const note = make("small", "text-body-tertiary text-nowrap", meta);
+    line.append(typeof title === "string" ? make("span", "text-truncate", title) : title, note);
+    row.append(line);
+    notes.set(row, note);
     return row;
   }
 
+  // The selected row is filled with the accent. The tertiary grey would sit
+  // on that fill unreadably, so the note dims the fill's own text colour instead.
   function select(row, on) {
     row.classList.toggle(`text-bg-${accent}`, on);
+    const note = notes.get(row);
+    note?.classList.toggle("text-body-tertiary", !on);
+    note?.classList.toggle("opacity-50", on);
   }
 
   function optionTitle() {
@@ -97,20 +117,6 @@ globalThis.__nuskaUi ??= (() => {
   }
 
   // --- keys ---------------------------------------------------------
-
-  // Read across then down, so the whole key set is takeable in at a glance.
-  function grid() {
-    return make("div", "row row-cols-3 g-1 m-0");
-  }
-
-  function keyRow(chip, title) {
-    const cell = make("div", "col");
-    const button = make("button", "btn border-0 w-100 d-flex align-items-center gap-2 text-start");
-    button.type = "button";
-    button.append(chip, make("span", "text-truncate", title));
-    cell.append(button);
-    return cell;
-  }
 
   function keyChip(key) {
     const chip = make("span", "badge text-bg-secondary font-monospace fs-6");
@@ -134,23 +140,6 @@ globalThis.__nuskaUi ??= (() => {
     char.classList.toggle("opacity-50", !on);
   }
 
-  function echo(buf) {
-    return make("kbd", "fs-6", buf);
-  }
-
-  function prompt(text) {
-    return make("span", "flex-grow-1 text-body-secondary px-2", text);
-  }
-
-  function hidden(node) {
-    node.classList.add("visually-hidden");
-    return node;
-  }
-
-  function show(node, on) {
-    node.classList.toggle("d-none", !on);
-  }
-
   function linkButton(label) {
     const button = make("button", "btn btn-link p-0 align-baseline", label);
     button.type = "button";
@@ -159,25 +148,13 @@ globalThis.__nuskaUi ??= (() => {
 
   // --- settings -----------------------------------------------------
 
-  // A saved shortcut as one clickable row: key chip, title, host.
-  function shortcutRow(key, title, host) {
-    const row = make("button", "list-group-item list-group-item-action d-flex align-items-center gap-3 py-3");
-    row.type = "button";
-    row.append(
-      keyChip(key).chip,
-      make("span", "text-truncate", title),
-      make("small", "ms-auto text-body-secondary text-nowrap", host),
-    );
-    return row;
-  }
-
   // The editor: a modal with a title, a form for its fields, and a footer.
   // Clicking outside the card closes it, like the overlays.
   function sheet(title) {
     const root = make("dialog", "modal d-block mw-100 mh-100 m-0 p-0 border-0 bg-transparent text-body");
     root.setAttribute("aria-label", title);
     const frame = make("div", "modal-dialog modal-dialog-centered");
-    const form = make("form", "modal-content shadow-lg");
+    const form = make("form", "modal-content shadow-lg rounded-4");
     const header = make("div", "modal-header px-4");
     header.append(make("h5", "modal-title", title));
     const body = make("div", "modal-body px-4 pt-4 pb-2");
@@ -290,8 +267,8 @@ globalThis.__nuskaUi ??= (() => {
   return {
     loadAccent, theme, dialog,
     search, count, list, option, optionTitle, select, mark, notice,
-    grid, keyRow, keyChip, dim, hot, typed, echo, prompt, hidden, show, linkButton,
-    shortcutRow, sheet, field, formField, invalid, quietButton, deleteButton,
+    keyChip, dim, hot, typed, linkButton,
+    sheet, field, formField, invalid, quietButton, deleteButton,
     label, binding, pair, muted, status, button, accentPicker,
   };
 })();

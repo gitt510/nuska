@@ -4,6 +4,7 @@
 globalThis.__nuskaKeys = {
   kind: "shortcuts",
   label: "Shortcuts",
+  placeholder: "Type a key",
   settings: true,
 
   async load(api) {

@@ -1,7 +1,7 @@
 // Finder overlay: one search box over a list of pages, shared by bookmarks and
 // history. The file injected just before this one (lib/bookmarks.js or
 // lib/history.js) leaves its source on globalThis.__nuskaSource:
-//   { kind, placeholder, load(api, inPage) → { rest, all } }
+//   { kind, label, placeholder, load(api, inPage) → { rest, all } }
 // where every entry is { title, url, host, matchUrl, path }. `rest` is what
 // shows before typing; `all` is the fuzzy-search corpus.
 //
@@ -65,13 +65,13 @@
   }
 
   function build(css) {
-    const { root: dialog, header, body } = UI.dialog(source.kind);
+    const { root: dialog, header, body } = UI.dialog(source.label, { fill: !IN_PAGE });
 
     const input = UI.search(source.placeholder);
     input.setAttribute("role", "combobox");
     input.setAttribute("aria-expanded", "true");
     input.setAttribute("aria-controls", "results");
-    input.setAttribute("aria-label", `Search ${source.kind}`);
+    input.setAttribute("aria-label", `Search ${source.label}`);
     const count = UI.count();
     header.append(input, count);
 
@@ -232,7 +232,7 @@
     rows = [];
     list.replaceChildren();
     entries.forEach((entry, i) => {
-      const li = UI.option(titleOf(entry), entry.host);
+      const li = UI.option({ title: titleOf(entry), meta: entry.host });
       li.id = `row-${i}`;
       li.setAttribute("role", "option");
       li.setAttribute("aria-selected", "false");

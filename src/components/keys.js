@@ -2,7 +2,7 @@
 // shared by shortcuts and tools. The file injected just before this one
 // (lib/shortcuts.js or lib/tools.js) leaves its source on
 // globalThis.__nuskaKeys:
-//   { kind, label, settings, load(api) → [{ key, title, hint }], fire(api, entry, ctx) }
+//   { kind, label, placeholder, settings, load(api) → [{ key, title, hint }], fire(api, entry, ctx) }
 // `settings` says whether ⌃O and the empty notice lead to the options page.
 // `ctx` is { originWindowId, screen } — what an action needs to act on the
 // page's window from the background.
@@ -43,7 +43,7 @@
   let rowChips = []; // the key chip of each row, parallel to entries
   let rowChars = []; // per-row character spans inside the chip
   let hits = []; // indices matching the current buffer
-  let ui = null; // { host, dialog, input, head, prompt, echo, list } while open
+  let ui = null; // { host, dialog, input, count, list } while open
 
   if (IN_PAGE) {
     toggles[source.kind] = () => (ui ? ui.dialog.close() : open());
@@ -74,21 +74,15 @@
   }
 
   function build(css) {
-    const { root: dialog, header: head, body } = UI.dialog(source.label);
+    const { root: dialog, header: head, body } = UI.dialog(source.label, { fill: !IN_PAGE });
 
-    const input = document.createElement("input");
-    input.type = "text";
-    // The buffer lives in a real input for free text editing (Backspace, IME
-    // rejection), but the echo chip is the display — the field itself is hidden.
-    UI.hidden(input);
-    input.autocomplete = "off";
+    // The same search field as the finder: the buffer is typed, and shown, here.
+    const input = UI.search(source.placeholder);
     input.setAttribute("aria-label", `${source.label} key`);
-    const prompt = UI.prompt("type a key");
-    const echo = document.createElement("span");
-    echo.setAttribute("aria-hidden", "true");
-    head.append(input, prompt, echo);
+    const count = UI.count();
+    head.append(input, count);
 
-    const list = UI.grid();
+    const list = UI.list();
     body.append(list);
 
     let host = null;
@@ -108,7 +102,7 @@
 
     dialog.addEventListener("keydown", onKeydown);
     input.addEventListener("input", onInput);
-    // The input is invisible, so a stray click must not be able to unfocus it.
+    // Typing is the only way in, so a stray click must not unfocus the field.
     dialog.addEventListener("mousedown", (e) => {
       if (e.target !== input) e.preventDefault();
     });
@@ -125,7 +119,7 @@
 
     dialog.showModal();
     input.focus();
-    return { host, dialog, input, head, prompt, echo, list };
+    return { host, dialog, input, count, list };
   }
 
   // Keys are normalized ASCII, so anything else — IME composition included —
@@ -145,23 +139,14 @@
       rowChars[i].forEach((c, j) => UI.typed(c, !buf || (hit && j < buf.length)));
       if (hit) hits.push(i);
     });
-    echoRender(buf, buf.length > 0 && hits.length === 0);
+    // A miss is the only state Escape must clear, so it says so.
+    ui.count.textContent = buf && !hits.length ? "no match — esc clears" : "";
     // The key set is prefix-free (settings enforces it for shortcuts; tools is
     // fixed), so firing on an exact match is firing on the only reachable
     // meaning of the buffer. In a hand-edited store that violates the rule,
     // the shorter key wins — same as SK2U.
     const exact = entries.find((s) => s.key === buf);
     if (exact) fire(exact);
-  }
-
-  // The header shows the buffer as an inverted chip — with a plain word next
-  // to it when it matches nothing, which is the only state Escape must clear.
-  function echoRender(buf, miss) {
-    UI.show(ui.prompt, buf.length === 0);
-    ui.echo.replaceChildren();
-    if (!buf) return;
-    ui.echo.append(UI.echo(buf));
-    if (miss) ui.echo.append(" ", UI.prompt("no match — esc clears"));
   }
 
   function onKeydown(e) {
@@ -197,8 +182,7 @@
     }
     entries.forEach((entry, i) => {
       const { chip, chars } = UI.keyChip(entry.key);
-      const li = UI.keyRow(chip, entry.title);
-      // A cell has no room for more than the title, so the rest is hover text.
+      const li = UI.option({ chip, title: entry.title, meta: entry.hint });
       li.title = entry.hint ? `${entry.title} — ${entry.hint}` : entry.title;
       li.addEventListener("click", () => fire(entry));
       rows.push(li);

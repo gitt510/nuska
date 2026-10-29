@@ -3,7 +3,8 @@
 // order. Search: every bookmark, matched on title, URL and folder path.
 globalThis.__nuskaSource = {
   kind: "bookmarks",
-  placeholder: "bookmarks…",
+  label: "Bookmarks",
+  placeholder: "Search by title, URL or folder",
 
   async load(api, inPage) {
     const roots = inPage ? await fromBackground(api) : await api.bookmarks.getTree();

@@ -67,7 +67,12 @@
       return;
     }
     for (const s of saved) {
-      const row = UI.shortcutRow(s.key, s.title || hostOf(s.url), hostOf(s.url));
+      const row = UI.option({
+        chip: UI.keyChip(s.key).chip,
+        title: s.title || hostOf(s.url),
+        meta: hostOf(s.url),
+        button: true,
+      });
       row.title = s.url;
       row.addEventListener("click", () => edit(s, s));
       ui.rows.append(row);

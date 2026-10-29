@@ -56,12 +56,15 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // own files without exposing them to pages) and hands the text over.
 // Bootstrap puts its variables on :root and its base type on body, neither of
 // which exists inside a shadow tree; :host is that element from the inside.
+// Its sizes are in rem, which follows the page's own root font size (Qiita and
+// others shrink it to 10px), so they are fixed at the browser default 16px.
 let overlayCssText = null;
 
 async function overlayCss() {
   overlayCssText ??= (await fetch(api.runtime.getURL("styles/bootstrap.min.css")).then((r) => r.text()))
     .replaceAll(":root", ":host")
-    .replace("}body{margin:0;", "}:host{margin:0;");
+    .replace("}body{margin:0;", "}:host{margin:0;")
+    .replace(/(\d*\.?\d+)rem\b/g, (_, n) => `${+n * 16}px`);
   return overlayCssText;
 }
 
