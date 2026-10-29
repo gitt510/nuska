@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Nuska",
-  "version": "0.1.23",
+  "version": "0.1.26",
   "description": "One shortcut opens your bookmarks bar with fuzzy search, one your history, one your key-to-URL shortcuts, and one a few window tools.",
   "icons": {
-    "16": "icons/icon-16.png",
-    "32": "icons/icon-32.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
+    "16": "public/icons/icon-16.png",
+    "32": "public/icons/icon-32.png",
+    "48": "public/icons/icon-48.png",
+    "128": "public/icons/icon-128.png"
   },
   "permissions": [
     "bookmarks",
@@ -22,20 +22,20 @@
     "http://127.0.0.1/*"
   ],
   "background": {
-    "service_worker": "bg.js",
+    "service_worker": "background.js",
     "scripts": [
-      "bg.js"
+      "background.js"
     ]
   },
   "action": {
     "default_title": "Bookmarks",
     "default_icon": {
-      "16": "icons/icon-16.png",
-      "32": "icons/icon-32.png"
+      "16": "public/icons/icon-16.png",
+      "32": "public/icons/icon-32.png"
     }
   },
   "options_ui": {
-    "page": "settings/settings.html",
+    "page": "app/settings.html",
     "open_in_tab": true
   },
   "commands": {

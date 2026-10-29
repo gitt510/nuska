@@ -1,17 +1,20 @@
 // Finder overlay: one search box over a list of pages, shared by bookmarks and
-// history. The file injected just before this one (bookmarks/bookmarks.js or
-// history/history.js) leaves its source on globalThis.__nuskaSource:
-//   { kind, placeholder, load(api, inPage) → { rest, all } }
+// history. The file injected just before this one (lib/bookmarks.js or
+// lib/history.js) leaves its source on globalThis.__nuskaSource:
+//   { kind, label, placeholder, load(api, inPage) → { rest, all } }
 // where every entry is { title, url, host, matchUrl, path }. `rest` is what
 // shows before typing; `all` is the fuzzy-search corpus.
 //
 // Two contexts, like the shortcuts overlay:
-//  - injected into the page as a content script (bg.js): a centered <dialog>
-//    inside a shadow root, on the page's top layer
-//  - loaded by <kind>.html inside a popup window: the fallback for pages that
-//    refuse injection (chrome://, the Web Store, …)
+//  - injected into the page as a content script (background.js): a centered
+//    <dialog> inside a shadow root, on the page's top layer
+//  - loaded by app/overlay.html inside a popup window: the fallback for pages
+//    that refuse injection (chrome://, the Web Store, …)
+//
+// Every element comes from components/ui.js; nothing here names a class.
 (() => {
   const api = globalThis.browser ?? globalThis.chrome;
+  const UI = globalThis.__nuskaUi;
   const source = globalThis.__nuskaSource;
   const IN_PAGE = !location.href.startsWith(api.runtime.getURL(""));
 
@@ -42,11 +45,12 @@
   open();
 
   async function open() {
-    let css = null;
-    if (IN_PAGE) {
-      const res = await api.runtime.sendMessage({ type: "get-css", name: "finder" });
-      css = res?.ok ? res.css : "";
-    }
+    // The accent is read before building: the rows are painted with it.
+    const [res] = await Promise.all([
+      IN_PAGE ? api.runtime.sendMessage({ type: "get-css" }) : null,
+      UI.loadAccent(api),
+    ]);
+    const css = IN_PAGE ? (res?.ok ? res.css : "") : null;
     ui = build(css);
     try {
       const loaded = await source.load(api, IN_PAGE);
@@ -61,28 +65,20 @@
   }
 
   function build(css) {
-    const dialog = document.createElement("dialog");
-    dialog.className = "dialog";
-    dialog.setAttribute("closedby", "any");
-    dialog.setAttribute("aria-label", source.kind);
+    const { root: dialog, header, body } = UI.dialog(source.label, { fill: !IN_PAGE });
 
-    const head = el("div", "head divider");
-    const input = document.createElement("input");
-    input.type = "text";
-    input.className = "search p";
-    input.placeholder = source.placeholder;
-    input.autocomplete = "off";
+    const input = UI.search(source.placeholder);
     input.setAttribute("role", "combobox");
     input.setAttribute("aria-expanded", "true");
     input.setAttribute("aria-controls", "results");
-    input.setAttribute("aria-label", `Search ${source.kind}`);
-    const count = el("span", "count muted");
-    head.append(input, count);
+    input.setAttribute("aria-label", `Search ${source.label}`);
+    const count = UI.count();
+    header.append(input, count);
 
-    const list = document.createElement("ul");
+    const list = UI.list();
     list.id = "results";
     list.setAttribute("role", "listbox");
-    dialog.append(head, list);
+    body.append(list);
 
     let host = null;
     if (IN_PAGE) {
@@ -94,9 +90,9 @@
       shadow.append(dialog);
       document.documentElement.append(host);
     } else {
-      // <kind>.html links the same three files
+      // app/overlay.html links the same stylesheet
+      UI.theme(document.documentElement);
       document.body.append(dialog);
-      dialog.classList.add("windowed");
     }
 
     dialog.addEventListener("keydown", onKeydown);
@@ -106,16 +102,11 @@
       if (IN_PAGE) host.remove();
       else window.close();
     });
-    // Light-dismiss fallback for browsers without <dialog closedby>.
-    if (!("closedBy" in HTMLDialogElement.prototype)) {
-      dialog.addEventListener("click", (e) => {
-        if (e.target !== dialog) return;
-        const r = dialog.getBoundingClientRect();
-        const inside =
-          r.top <= e.clientY && e.clientY <= r.bottom && r.left <= e.clientX && e.clientX <= r.right;
-        if (!inside) dialog.close();
-      });
-    }
+    // The dialog fills the viewport and the modal card sits inside it, so a
+    // click that lands on the dialog itself is outside the card.
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
 
     dialog.showModal();
     input.focus();
@@ -216,8 +207,10 @@
   function move(dir) {
     const next = selected + dir;
     if (next < 0 || next >= entries.length) return;
-    rows[selected]?.classList.remove("selected");
-    rows[selected]?.setAttribute("aria-selected", "false");
+    if (rows[selected]) {
+      UI.select(rows[selected], false);
+      rows[selected].setAttribute("aria-selected", "false");
+    }
     selected = next;
     applySelection();
   }
@@ -228,7 +221,7 @@
       ui.input.removeAttribute("aria-activedescendant");
       return;
     }
-    row.classList.add("selected");
+    UI.select(row, true);
     row.setAttribute("aria-selected", "true");
     ui.input.setAttribute("aria-activedescendant", row.id);
     row.scrollIntoView({ block: "nearest" });
@@ -239,14 +232,11 @@
     rows = [];
     list.replaceChildren();
     entries.forEach((entry, i) => {
-      const li = el("li", "row");
+      const li = UI.option({ title: titleOf(entry), meta: entry.host });
       li.id = `row-${i}`;
       li.setAttribute("role", "option");
       li.setAttribute("aria-selected", "false");
       li.title = entry.url;
-      const meta = el("span", "meta muted");
-      meta.textContent = entry.host;
-      li.append(titleSpan(entry), meta);
       li.addEventListener("click", () => openEntry(entry));
       rows.push(li);
       list.append(li);
@@ -255,12 +245,12 @@
     applySelection();
   }
 
-  // Title with the fuzzy-matched characters wrapped in <b class="match">.
-  function titleSpan(entry) {
-    const span = el("span", "title small");
+  // Title with the fuzzy-matched characters wrapped in <mark>.
+  function titleOf(entry) {
+    const title = UI.optionTitle();
     if (!entry.at?.length) {
-      span.textContent = entry.title;
-      return span;
+      title.textContent = entry.title;
+      return title;
     }
     const at = new Set(entry.at);
     const t = entry.title;
@@ -271,15 +261,13 @@
       while (j < t.length && at.has(j) === hit) j++;
       const chunk = t.slice(i, j);
       if (hit) {
-        const b = el("b", "match");
-        b.textContent = chunk;
-        span.append(b);
+        title.append(UI.mark(chunk));
       } else {
-        span.append(chunk);
+        title.append(chunk);
       }
       i = j;
     }
-    return span;
+    return title;
   }
 
   // Open in the background so the overlay's death can't cut the work short.
@@ -289,15 +277,8 @@
   }
 
   function notice(text) {
-    const li = el("li", "notice muted destructive");
-    li.setAttribute("role", "presentation");
-    li.textContent = text;
-    return li;
-  }
-
-  function el(tag, className) {
-    const node = document.createElement(tag);
-    node.className = className;
+    const node = UI.notice(text, true);
+    node.setAttribute("role", "presentation");
     return node;
   }
 })();

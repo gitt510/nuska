@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nuska — Settings</title>
+    <link rel="stylesheet" href="../styles/bootstrap.min.css" />
+  </head>
+  <body>
+    <main class="container py-5 my-md-4 d-grid gap-5">
+      <section class="d-grid gap-4 pb-4">
+        <h2 class="border-bottom pb-3 mb-0">Accent</h2>
+        <p class="text-body-secondary mb-0">The colour of whatever answers the keyboard: the selected row, a matching key, these buttons.</p>
+        <div id="accent"></div>
+      </section>
+
+      <section class="d-grid gap-4 pb-4">
+        <h2 class="border-bottom pb-3 mb-0">Prefix</h2>
+        <p class="text-body-secondary mb-0">Click a binding and press keys. Backspace unbinds.</p>
+        <div id="bindings" class="d-grid gap-3"></div>
+      </section>
+
+      <section class="d-grid gap-4 pb-4">
+        <h2 class="border-bottom pb-3 mb-0">Shortcuts</h2>
+        <p class="text-body-secondary mb-0">Click a shortcut to edit or delete it.</p>
+        <div id="rows" class="list-group"></div>
+        <div id="add-bar" class="d-flex align-items-center gap-3">
+          <span id="status" class="text-body-secondary"></span>
+        </div>
+      </section>
+
+      <section class="d-grid gap-4 pb-4">
+        <h2 class="border-bottom pb-3 mb-0">Import</h2>
+        <p class="text-body-secondary mb-0">JSON, or a ShortcutKey2URL export.</p>
+        <textarea
+          id="import-text"
+          class="form-control font-monospace"
+          rows="6"
+          spellcheck="false"
+          placeholder='[{"key": "ex", "title": "Example", "url": "https://example.com"}]'
+        ></textarea>
+        <div id="import-bar"></div>
+      </section>
+    </main>
+
+    <script src="../components/ui.js"></script>
+    <script src="settings.js"></script>
+  </body>
+</html>

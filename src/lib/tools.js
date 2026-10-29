@@ -1,9 +1,10 @@
 // Tools source for the keys overlay (keys/keys.js is injected right after
 // this file): window chores that have no UI of their own. The set is fixed
-// and prefix-free; each key names a `run-tool` action in bg.js.
+// and prefix-free; each key names a `run-tool` action in background.js.
 globalThis.__nuskaKeys = {
   kind: "tools",
   label: "Tools",
+  placeholder: "Type a key",
   settings: false,
 
   async load() {

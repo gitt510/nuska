@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Dev hot-reload watcher. Serves a change stamp on 127.0.0.1; the extension
-// polls it and reloads itself when the stamp changes (see bg.js).
+// polls it and reloads itself when the stamp changes (see background.js).
 import { createServer } from "node:http";
 import { watch } from "node:fs";
 import { fileURLToPath } from "node:url";

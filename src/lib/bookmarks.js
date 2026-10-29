@@ -3,7 +3,8 @@
 // order. Search: every bookmark, matched on title, URL and folder path.
 globalThis.__nuskaSource = {
   kind: "bookmarks",
-  placeholder: "bookmarks…",
+  label: "Bookmarks",
+  placeholder: "Search by title, URL or folder",
 
   async load(api, inPage) {
     const roots = inPage ? await fromBackground(api) : await api.bookmarks.getTree();
@@ -11,7 +12,7 @@ globalThis.__nuskaSource = {
   },
 };
 
-// Content scripts have no bookmarks API; bg.js reads the tree for them.
+// Content scripts have no bookmarks API; background.js reads the tree for them.
 async function fromBackground(api) {
   const res = await api.runtime.sendMessage({ type: "get-tree" });
   if (!res?.ok) throw new Error(res?.error ?? "no response from background");
