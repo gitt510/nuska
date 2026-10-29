@@ -55,7 +55,9 @@ Firefox (permanent install — Firefox only accepts signed extensions):
 3. For development sessions, `just dev-ff` instead runs a throwaway Firefox
    with the extension loaded and reload-on-save (no signing needed). The
    empty profile seeds itself with `src/dev-seed.json` on install —
-   development installs only, and only when there are no shortcuts yet
+   development installs only. Shortcuts go in only when there are none, and
+   sample bookmarks only into a bar holding none of your own, so a Chrome
+   "Load unpacked" into a real profile leaves both alone
 
 ### How it opens
 

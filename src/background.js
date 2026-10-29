@@ -201,9 +201,10 @@ async function splitWindow(origin, senderTab, screen) {
 // --- dev seed (development installs only) ---
 // web-ext run starts from an empty throwaway profile every time, so a fresh
 // development install gets the sample shortcuts and bookmarks bar. Signed
-// installs report installType "normal" and never reach this; a profile that
-// already has shortcuts keeps them. Bookmarks go in on every development
-// install, since a new Firefox profile's bar is never quite empty.
+// installs report installType "normal" and never reach this. Chrome's "Load
+// unpacked" is a development install too, often into a real profile, so each
+// sample goes in only where there is nothing yet: no shortcuts, and a bar
+// holding no bookmarks besides Firefox's own mozilla.org defaults.
 api.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason !== "install") return;
   try {
@@ -215,11 +216,17 @@ api.runtime.onInstalled.addListener(async ({ reason }) => {
     // The bookmarks bar folder: Chrome id "1" / Firefox id "toolbar_____".
     const top = (await api.bookmarks.getTree())[0].children ?? [];
     const bar = top.find((n) => n.id === "1" || n.id === "toolbar_____") ?? top[0];
-    await seedBookmarks(bar.id, seed.bookmarks);
+    const [barNode] = await api.bookmarks.getSubTree(bar.id);
+    if (!hasOwnBookmarks(barNode)) await seedBookmarks(bar.id, seed.bookmarks);
   } catch (err) {
     console.warn("dev seed skipped:", err); // convenience only — never fatal
   }
 });
+
+function hasOwnBookmarks(node) {
+  if (node.url) return !/^https?:\/\/([^/]+\.)?mozilla\.org\//.test(node.url);
+  return (node.children ?? []).some(hasOwnBookmarks);
+}
 
 async function seedBookmarks(parentId, nodes) {
   for (const { title, url, children } of nodes) {
