@@ -41,10 +41,15 @@ sign:
     git tag "v$version"
     git push origin "v$version"
 
+# Download a version already signed on AMO (default: the manifest's) into web-ext-artifacts/
+[group('install')]
+fetch-xpi version="":
+    op run --env-file=op.env -- node scripts/fetch-xpi.mjs {{version}}
+
 # Install the newest signed .xpi into Firefox (opens the install prompt)
 [group('install')]
 install-xpi:
-    open -a Firefox "$(ls -t web-ext-artifacts/*.xpi | head -1)"
+    open -a Firefox "$(ls web-ext-artifacts/*.xpi | sort -V | tail -1)"
 
 # Install permanently into Firefox from main: sign -> install-xpi
 [group('install')]

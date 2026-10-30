@@ -52,6 +52,9 @@ Firefox (permanent install — Firefox only accepts signed extensions):
      `v<version>`, and opens the signed `.xpi` in Firefox; click "Add"
    - `sign` refuses another branch, uncommitted changes, or a version that is
      already tagged
+   - on another machine, where the version is already signed and tagged,
+     `just fetch-xpi` downloads the signed `.xpi` from AMO (default: the
+     manifest's version), then `just install-xpi`
 3. For development sessions, `just dev-ff` instead runs a throwaway Firefox
    with the extension loaded and reload-on-save (no signing needed). The
    empty profile seeds itself with `src/dev-seed.json` on install —
